@@ -35,6 +35,7 @@ build/initramfs-minimal/
 
 # 脚本
 *.sh
+!scripts/*.sh
 
 # 设备树
 *.dts
