@@ -148,11 +148,10 @@ alpine-devel@lists.alpinelinux.org-6165ee59.rsa.pub"
 iw dnsmasq nftables iptables iproute2 bridge-utils ethtool tcpdump curl wget
 ca-certificates openssl dropbear rsync tar gzip xz vim nano htop chrony
 tzdata eudev procps coreutils findutils grep sed gawk
-lighttpd ppp miniupnpd radvd wireguard-tools openvpn nftables
-usbutils ntfs-3g cifs-utils nfs-utils
-bridge-utils hostapd chrony ntp"
+lighttpd ppp miniupnpd radvd wireguard-tools openvpn
+usbutils ntfs-3g cifs-utils hostapd"
     
-    "${APK_STATIC}" add --root "${ROOTFS_DIR}" --no-cache --allow-untrusted --no-scripts ${EXTRA_PKGS} || true
+    "${APK_STATIC}" add --root "${ROOTFS_DIR}" --no-cache --allow-untrusted --no-scripts ${EXTRA_PKGS} 2>&1 | tail -20
     
     # Verify at least some critical packages were installed
     if [ -f "${ROOTFS_DIR}/usr/bin/wget" ] || [ -f "${ROOTFS_DIR}/usr/bin/curl" ]; then
