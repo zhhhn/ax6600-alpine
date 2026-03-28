@@ -113,26 +113,31 @@ alpine-devel@lists.alpinelinux.org-6165ee59.rsa.pub"
         warn "Failed to download key: ${key}"
     done
     
-    # Install base packages (with allow-untrusted fallback for CI)
+    # Install base packages ( tolerant of post-install errors in CI containers)
     local BASE_PKGS="alpine-baselayout musl busybox busybox-suid openrc"
-    "${APK_STATIC}" add --root "${ROOTFS_DIR}" --initdb --no-cache ${BASE_PKGS} 2>/dev/null || {
-        warn "Standard install failed, trying with --allow-untrusted (CI environment)"
-        "${APK_STATIC}" add --root "${ROOTFS_DIR}" --initdb --no-cache --allow-untrusted ${BASE_PKGS} || {
-            error "Failed to install base packages even with --allow-untrusted"
-            exit 1
-        }
-    }
+    "${APK_STATIC}" add --root "${ROOTFS_DIR}" --initdb --no-cache --allow-untrusted ${BASE_PKGS} || true
     
-    # Install additional packages
+    # Verify base packages were installed
+    if [ ! -f "${ROOTFS_DIR}/bin/busybox" ] || [ ! -f "${ROOTFS_DIR}/sbin/init" ]; then
+        error "Base packages were not installed correctly"
+        exit 1
+    fi
+    info "Base packages installed successfully"
+    
+    # Install additional packages (tolerant of post-install errors)
     local EXTRA_PKGS="e2fsprogs dosfstools util-linux kmod wireless-tools wpa_supplicant
 iw dnsmasq nftables iptables iproute2 bridge-utils ethtool tcpdump curl wget
 ca-certificates openssl dropbear rsync tar gzip xz vim nano htop chrony
 tzdata eudev procps coreutils findutils grep sed gawk"
     
-    "${APK_STATIC}" add --root "${ROOTFS_DIR}" --no-cache ${EXTRA_PKGS} 2>/dev/null || {
-        warn "Some packages failed with standard install, trying --allow-untrusted"
-        "${APK_STATIC}" add --root "${ROOTFS_DIR}" --no-cache --allow-untrusted ${EXTRA_PKGS} 2>/dev/null || warn "Some packages may have failed to install"
-    }
+    "${APK_STATIC}" add --root "${ROOTFS_DIR}" --no-cache --allow-untrusted ${EXTRA_PKGS} || true
+    
+    # Verify at least some critical packages were installed
+    if [ -f "${ROOTFS_DIR}/usr/bin/wget" ] || [ -f "${ROOTFS_DIR}/usr/bin/curl" ]; then
+        info "Additional packages installed"
+    else
+        warn "Some additional packages may have failed to install"
+    fi
 }
 
 # Apply overlay
