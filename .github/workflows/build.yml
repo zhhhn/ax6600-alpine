@@ -11,8 +11,20 @@ permissions:
   contents: write
 
 jobs:
+  test:
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Run firmware tests
+      run: |
+        chmod +x scripts/test-firmware.sh
+        ./scripts/test-firmware.sh all
+
   build:
     runs-on: ubuntu-22.04
+    needs: test
     
     steps:
     - name: Checkout code

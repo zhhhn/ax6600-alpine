@@ -1,0 +1,97 @@
+#!/sbin/openrc-run
+# LED control service for JDCloud AX6600
+
+name="leds"
+description="Manage system LED indicators"
+
+LED_POWER="/sys/class/leds/green:power"
+LED_SYSTEM="/sys/class/leds/blue:system"
+LED_WIFI_2G="/sys/class/leds/green:wifi2g"
+LED_WIFI_5G="/sys/class/leds/blue:wifi5g"
+
+depend() {
+    after bootmisc
+    need net
+}
+
+start() {
+    ebegin "Starting LED control"
+    
+    # Set power LED (always on)
+    if [ -d "$LED_POWER" ]; then
+        echo 255 > "${LED_POWER}/brightness" 2>/dev/null || true
+        echo "none" > "${LED_POWER}/trigger" 2>/dev/null || true
+    fi
+    
+    # Set system LED breathing effect
+    if [ -d "$LED_SYSTEM" ]; then
+        # Try timer trigger for breathing
+        if [ -f "${LED_SYSTEM}/trigger" ]; then
+            echo "timer" > "${LED_SYSTEM}/trigger" 2>/dev/null || true
+            echo 500 > "${LED_SYSTEM}/delay_on" 2>/dev/null || true
+            echo 500 > "${LED_SYSTEM}/delay_off" 2>/dev/null || true
+        fi
+    fi
+    
+    # Set WiFi LEDs based on status
+    update_wifi_leds
+    
+    eend $?
+}
+
+stop() {
+    ebegin "Stopping LED control"
+    
+    # Turn off all LEDs
+    for led in "$LED_POWER" "$LED_SYSTEM" "$LED_WIFI_2G" "$LED_WIFI_5G"; do
+        if [ -d "$led" ]; then
+            echo 0 > "${led}/brightness" 2>/dev/null || true
+        fi
+    done
+    
+    eend $?
+}
+
+update_wifi_leds() {
+    # Check if WiFi is running
+    if pgrep -f hostapd > /dev/null; then
+        # WiFi on - LEDs on
+        if [ -d "$LED_WIFI_2G" ]; then
+            echo 255 > "${LED_WIFI_2G}/brightness" 2>/dev/null || true
+        fi
+        if [ -d "$LED_WIFI_5G" ]; then
+            echo 255 > "${LED_WIFI_5G}/brightness" 2>/dev/null || true
+        fi
+    else
+        # WiFi off - LEDs off
+        if [ -d "$LED_WIFI_2G" ]; then
+            echo 0 > "${LED_WIFI_2G}/brightness" 2>/dev/null || true
+        fi
+        if [ -d "$LED_WIFI_5G" ]; then
+            echo 0 > "${LED_WIFI_5G}/brightness" 2>/dev/null || true
+        fi
+    fi
+}
+
+status() {
+    echo "=== LED Status ==="
+    
+    for led_name in "LED_POWER" "LED_SYSTEM" "LED_WIFI_2G" "LED_WIFI_5G"; do
+        led_path=$(eval echo \$$led_name)
+        if [ -d "$led_path" ]; then
+            brightness=$(cat "${led_path}/brightness" 2>/dev/null || echo "N/A")
+            trigger=$(cat "${led_path}/trigger" 2>/dev/null | sed 's/\[.*\]/ACTIVE/' || echo "N/A")
+            echo "${led_name}: brightness=${brightness}, trigger=${trigger}"
+        else
+            echo "${led_name}: not found"
+        fi
+    done
+}
+
+# Periodic update function for WiFi LED status
+watch_wifi() {
+    while true; do
+        update_wifi_leds
+        sleep 5
+    done
+}

@@ -1,0 +1,19 @@
+#!/sbin/openrc-run
+
+name="firewall"
+
+depend() {
+    after net
+}
+
+start() {
+    ebegin "Starting firewall"
+    /sbin/nft -f /etc/nftables.conf 2>/dev/null
+    eend $?
+}
+
+stop() {
+    ebegin "Stopping firewall"
+    /sbin/nft flush ruleset 2>/dev/null
+    eend $?
+}

@@ -1,0 +1,129 @@
+#!/sbin/openrc-run
+# Button event handler for JDCloud AX6600
+
+name="buttons"
+description="Handle hardware button events"
+
+# GPIO buttons (need to be verified on actual hardware)
+RESET_GPIO="gpio-reset"
+WPS_GPIO="gpio-wps"
+
+# Button thresholds
+RESET_HOLD_TIME=10  # seconds for factory reset
+WPS_HOLD_TIME=3     # seconds for WPS
+
+depend() {
+    after bootmisc
+}
+
+start() {
+    ebegin "Starting button handler"
+    
+    # Start button monitoring daemon
+    start_button_monitor &
+    
+    eend $?
+}
+
+stop() {
+    ebegin "Stopping button handler"
+    
+    # Kill button monitor
+    killall button-monitor 2>/dev/null || true
+    
+    eend $?
+}
+
+start_button_monitor() {
+    # Create button monitor script
+    cat > /usr/sbin/button-monitor << 'MONITOR'
+#!/bin/sh
+# Button event monitor
+
+RESET_GPIO="/sys/class/gpio/gpio-reset/value"
+WPS_GPIO="/sys/class/gpio/gpio-wps/value"
+
+# State tracking
+reset_pressed=0
+reset_start=0
+wps_pressed=0
+wps_start=0
+
+# Main loop
+while true; do
+    # Check reset button
+    if [ -f "$RESET_GPIO" ]; then
+        reset_value=$(cat "$RESET_GPIO")
+        if [ "$reset_value" = "0" ]; then  # Button pressed (active low)
+            if [ "$reset_pressed" = "0" ]; then
+                reset_pressed=1
+                reset_start=$(date +%s)
+            fi
+            
+            # Check hold time
+            now=$(date +%s)
+            hold_time=$((now - reset_start))
+            
+            if [ "$hold_time" -ge 10 ]; then
+                echo "Reset button held for 10 seconds - factory reset!"
+                /usr/sbin/factory-reset --backup
+                exit 0
+            fi
+        else
+            reset_pressed=0
+            reset_start=0
+        fi
+    fi
+    
+    # Check WPS button
+    if [ -f "$WPS_GPIO" ]; then
+        wps_value=$(cat "$WPS_GPIO")
+        if [ "$wps_value" = "0" ]; then  # Button pressed
+            if [ "$wps_pressed" = "0" ]; then
+                wps_pressed=1
+                wps_start=$(date +%s)
+            fi
+            
+            # Short press - WPS
+            now=$(date +%s)
+            hold_time=$((now - wps_start))
+            
+            if [ "$hold_time" -ge 1 ] && [ "$hold_time" -lt 3 ]; then
+                echo "WPS button pressed - initiating WPS"
+                # WPS activation would be here
+                wps_pressed=0
+            fi
+        else
+            wps_pressed=0
+            wps_start=0
+        fi
+    fi
+    
+    sleep 0.5
+done
+MONITOR
+    
+    chmod +x /usr/sbin/button-monitor
+    /usr/sbin/button-monitor 2>/dev/null &
+}
+
+status() {
+    echo "=== Button Status ==="
+    
+    # Check GPIO availability
+    for gpio in "$RESET_GPIO" "$WPS_GPIO"; do
+        if [ -f "$gpio" ]; then
+            echo "Button: $gpio - available"
+            echo "  Value: $(cat $gpio 2>/dev/null || echo 'N/A')"
+        else
+            echo "Button: $gpio - not configured"
+        fi
+    done
+    
+    # Check monitor process
+    if pgrep -f button-monitor > /dev/null; then
+        echo "Button monitor: running"
+    else
+        echo "Button monitor: not running"
+    fi
+}

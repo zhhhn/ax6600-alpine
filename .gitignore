@@ -51,4 +51,4 @@ build/initramfs-minimal/
 out/*.bin
 out/*.itb
 out/*.img
-out/*.gz
+out/*.gztest-env/

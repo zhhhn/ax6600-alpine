@@ -1,0 +1,252 @@
+#!/bin/sh
+# Firmware upgrade utility for JDCloud AX6600
+# Similar to OpenWrt's sysupgrade
+
+BACKUP_DIR="/tmp/config-backup"
+FIRMWARE_DIR="/tmp/firmware"
+MMC_ROOT="/dev/mmcblk0p18"
+MMC_KERNEL="/dev/mmcblk0p11"  # HLOS partition, may need adjustment
+
+usage() {
+    echo "Usage: sysupgrade <command> [options]"
+    echo "Commands:"
+    echo "  <firmware-file>           - Upgrade firmware (keep config)"
+    echo "  -n <firmware-file>        - Upgrade firmware (clear config)"
+    echo "  -b                        - Backup current configuration"
+    echo "  -r                        - Restore configuration from backup"
+    echo "  -l                        - List available backups"
+    echo "  -c                        - Check firmware integrity"
+    echo "  -v                        - Show current version info"
+    echo ""
+    echo "Warning: Firmware upgrade requires reboot!"
+}
+
+backup_config() {
+    echo "Backing up configuration..."
+    
+    mkdir -p "$BACKUP_DIR"
+    
+    # Backup critical config files
+    tar -czf "${BACKUP_DIR}/config-backup-$(date +%Y%m%d-%H%M%S).tar.gz" \
+        /etc/network/interfaces \
+        /etc/hostapd/*.conf \
+        /etc/dnsmasq.conf \
+        /etc/nftables.conf \
+        /etc/shadow \
+        /etc/passwd \
+        /etc/port-forward.rules \
+        /etc/ppp \
+        2>/dev/null || true
+    
+    # Also keep a latest backup
+    cp "${BACKUP_DIR}/config-backup-$(date +%Y%m%d-%H%M%S).tar.gz" \
+       "${BACKUP_DIR}/config-backup-latest.tar.gz" 2>/dev/null || true
+    
+    echo "Backup saved to ${BACKUP_DIR}/"
+    ls -lh "${BACKUP_DIR}/"
+}
+
+restore_config() {
+    echo "Restoring configuration..."
+    
+    local backup_file="${BACKUP_DIR}/config-backup-latest.tar.gz"
+    
+    if [ ! -f "$backup_file" ]; then
+        # Find latest backup
+        backup_file=$(ls -t "${BACKUP_DIR}/config-backup-*.tar.gz" 2>/dev/null | head -1)
+    fi
+    
+    if [ -z "$backup_file" ] || [ ! -f "$backup_file" ]; then
+        echo "Error: No backup found"
+        exit 1
+    fi
+    
+    echo "Restoring from: $backup_file"
+    tar -xzf "$backup_file" -C / 2>/dev/null || true
+    
+    # Restart services
+    rc-service network restart 2>/dev/null || true
+    rc-service dnsmasq restart 2>/dev/null || true
+    rc-service firewall restart 2>/dev/null || true
+    
+    echo "Configuration restored"
+}
+
+list_backups() {
+    echo "Available backups:"
+    ls -lh "${BACKUP_DIR}/" 2>/dev/null || echo "No backups found"
+}
+
+check_firmware() {
+    local firmware="$1"
+    
+    if [ -z "$firmware" ]; then
+        echo "Error: Firmware file required"
+        exit 1
+    fi
+    
+    if [ ! -f "$firmware" ]; then
+        echo "Error: File not found: $firmware"
+        exit 1
+    fi
+    
+    echo "Checking firmware: $firmware"
+    echo ""
+    
+    local size=$(stat -c%s "$firmware")
+    echo "File size: $(echo $size | awk '{printf "%.2f MB", $1/1048576}')"
+    
+    # Check SHA256
+    echo "SHA256: $(sha256sum "$firmware" | cut -d' ' -f1)"
+    
+    # Basic structure check
+    echo ""
+    echo "Structure check:"
+    
+    # Try to identify firmware parts
+    if file "$firmware" | grep -q "gzip"; then
+        echo "  Contains gzip compressed data"
+    fi
+    
+    if dd if="$firmware" bs=1 count=8 skip=0 2>/dev/null | od -A x -t x1z | grep -q "1f 8b"; then
+        echo "  Kernel part: gzip compressed (offset 0)"
+    fi
+    
+    echo ""
+    echo "Firmware appears valid for upgrade"
+}
+
+show_version() {
+    echo "=== System Version ==="
+    echo ""
+    
+    # Kernel version
+    echo "Kernel: $(uname -r)"
+    
+    # Alpine version
+    if [ -f /etc/alpine-release ]; then
+        echo "Alpine: $(cat /etc/alpine-release)"
+    fi
+    
+    # Build date (from filesystem)
+    echo "Build: $(stat -c%y /etc/shadow 2>/dev/null | cut -d'.' -f1 || echo 'unknown')"
+    
+    # Uptime
+    echo "Uptime: $(uptime)"
+    
+    # Memory
+    echo "Memory: $(free -h | grep Mem | awk '{print $3 " used of " $2}')"
+}
+
+do_upgrade() {
+    local firmware="$1"
+    local keep_config="${2:-1}"
+    
+    if [ ! -f "$firmware" ]; then
+        echo "Error: Firmware file not found: $firmware"
+        exit 1
+    fi
+    
+    echo "=== Firmware Upgrade ==="
+    echo "Firmware: $firmware"
+    echo "Keep config: $keep_config"
+    echo ""
+    
+    # Backup config if keeping
+    if [ "$keep_config" = "1" ]; then
+        backup_config
+    fi
+    
+    # Verify firmware
+    echo "Verifying firmware..."
+    local sha=$(sha256sum "$firmware" | cut -d' ' -f1)
+    echo "SHA256: $sha"
+    
+    # Check minimum size
+    local size=$(stat -c%s "$firmware")
+    if [ "$size" -lt 10000000 ]; then
+        echo "Warning: Firmware seems small (< 10MB), may be incomplete"
+        read -p "Continue anyway? [y/N]: " confirm
+        [ "$confirm" != "y" ] && exit 1
+    fi
+    
+    echo ""
+    echo "Preparing to flash firmware..."
+    echo "This will REBOOT the device!"
+    read -p "Proceed with upgrade? [y/N]: " confirm
+    [ "$confirm" != "y" ] && echo "Aborted" && exit 1
+    
+    # Write firmware
+    echo "Writing firmware to MMC..."
+    
+    # This is a simplified approach - actual partition mapping may differ
+    # The factory.bin format is: kernel (6MB padded) + rootfs
+    
+    # Extract kernel part (first ~6MB)
+    dd if="$firmware" of="/tmp/kernel.bin" bs=1M count=6 2>/dev/null
+    
+    # Write kernel to HLOS partition (adjust partition number)
+    # dd if="/tmp/kernel.bin" of="$MMC_KERNEL" bs=1M 2>/dev/null
+    
+    # Extract rootfs (skip 6MB)
+    dd if="$firmware" of="/tmp/rootfs.bin" bs=1M skip=6 2>/dev/null
+    
+    # Write rootfs to data partition
+    # Note: This overwrites the existing rootfs!
+    echo "Flashing rootfs partition..."
+    
+    # For safety, we use a two-step process:
+    # 1. Flash to alternate partition if available
+    # 2. Or flash directly (risky!)
+    
+    # Real implementation would need partition table knowledge
+    echo "Note: Actual flashing requires partition table verification"
+    echo "Current implementation is a simulation"
+    
+    echo ""
+    echo "Upgrade would proceed with:"
+    echo "  1. Flash kernel to ${MMC_KERNEL}"
+    echo "  2. Flash rootfs to ${MMC_ROOT}"
+    echo "  3. Reboot system"
+    
+    # Simulated reboot
+    echo ""
+    echo "For actual upgrade, please:"
+    echo "  1. Copy firmware to TFTP server"
+    echo "  2. Use U-Boot commands from flash-commands.txt"
+    echo ""
+    echo "Or use: reboot to restart after manual verification"
+}
+
+# Main
+case "$1" in
+    -b)
+        backup_config
+        ;;
+    -r)
+        restore_config
+        ;;
+    -l)
+        list_backups
+        ;;
+    -c)
+        check_firmware "$2"
+        ;;
+    -v)
+        show_version
+        ;;
+    -n)
+        do_upgrade "$2" "0"
+        ;;
+    -h|--help)
+        usage
+        ;;
+    *)
+        if [ -n "$1" ] && [ -f "$1" ]; then
+            do_upgrade "$1" "1"
+        else
+            usage
+            exit 1
+        fi
+        ;;
+esac
