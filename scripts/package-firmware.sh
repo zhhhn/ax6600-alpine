@@ -184,30 +184,44 @@ create_factory_image() {
         return 1
     fi
     
-    # Create factory image
-    dd if="$KERNEL_IMAGE" of="${FACTORY_IMAGE}" bs=1 2>/dev/null
-    local KERNEL_SIZE=$(stat -c%s "${FACTORY_IMAGE}" 2>/dev/null || echo 0)
-    local PAD_SIZE=$((6 * 1024 * 1024 - KERNEL_SIZE))
+    local KERNEL_SIZE=$(stat -c%s "$KERNEL_IMAGE" 2>/dev/null || echo 0)
+    info "Kernel size: $(echo $KERNEL_SIZE | awk '{printf "%.2f MB", $1/1048576}')"
     
+    # Create factory image with kernel
+    dd if="$KERNEL_IMAGE" of="${FACTORY_IMAGE}" bs=1 2>/dev/null
+    local CURRENT_SIZE=$(stat -c%s "${FACTORY_IMAGE}" 2>/dev/null || echo 0)
+    
+    # Pad to 6MB if kernel is smaller
+    local PAD_SIZE=$((6 * 1024 * 1024 - CURRENT_SIZE))
     if [ $PAD_SIZE -gt 0 ]; then
         dd if=/dev/zero bs=1 count=$PAD_SIZE 2>/dev/null >> "${FACTORY_IMAGE}"
     fi
     
     # Append rootfs
-    if [ -f "${OUTPUT_DIR}/alpine-rootfs.img.gz" ]; then
-        cat "${OUTPUT_DIR}/alpine-rootfs.img.gz" >> "${FACTORY_IMAGE}"
-    elif [ -f "${OUTPUT_DIR}/alpine-rootfs.tar.gz" ]; then
-        cat "${OUTPUT_DIR}/alpine-rootfs.tar.gz" >> "${FACTORY_IMAGE}"
+    local ROOTFS_FILE=""
+    local ROOTFS_SIZE=0
+    if [ -f "${OUTPUT_DIR}/alpine-rootfs.tar.gz" ]; then
+        ROOTFS_FILE="${OUTPUT_DIR}/alpine-rootfs.tar.gz"
+        ROOTFS_SIZE=$(stat -c%s "$ROOTFS_FILE" 2>/dev/null || echo 0)
+        info "Using rootfs: alpine-rootfs.tar.gz ($(echo $ROOTFS_SIZE | awk '{printf "%.2f MB", $1/1048576}'))"
+        cat "$ROOTFS_FILE" >> "${FACTORY_IMAGE}"
+    elif [ -f "${OUTPUT_DIR}/alpine-rootfs.img.gz" ]; then
+        ROOTFS_FILE="${OUTPUT_DIR}/alpine-rootfs.img.gz"
+        ROOTFS_SIZE=$(stat -c%s "$ROOTFS_FILE" 2>/dev/null || echo 0)
+        info "Using rootfs: alpine-rootfs.img.gz ($(echo $ROOTFS_SIZE | awk '{printf "%.2f MB", $1/1048576}'))"
+        cat "$ROOTFS_FILE" >> "${FACTORY_IMAGE}"
     elif [ -f "${OUTPUT_DIR}/alpine-rootfs.cpio.gz" ]; then
-        cat "${OUTPUT_DIR}/alpine-rootfs.cpio.gz" >> "${FACTORY_IMAGE}"
-        warn "Using cpio.gz format for rootfs"
+        ROOTFS_FILE="${OUTPUT_DIR}/alpine-rootfs.cpio.gz"
+        ROOTFS_SIZE=$(stat -c%s "$ROOTFS_FILE" 2>/dev/null || echo 0)
+        info "Using rootfs: alpine-rootfs.cpio.gz ($(echo $ROOTFS_SIZE | awk '{printf "%.2f MB", $1/1048576}'))"
+        cat "$ROOTFS_FILE" >> "${FACTORY_IMAGE}"
     else
-        warn "No rootfs archive found - factory image contains only kernel"
+        warn "No rootfs archive found - factory image contains only kernel!"
     fi
     
     # Show final size
     local FINAL_SIZE=$(stat -c%s "${FACTORY_IMAGE}" 2>/dev/null || echo 0)
-    info "Factory image size: $(echo $FINAL_SIZE | awk '{printf "%.2f MB", $1/1048576}')"
+    info "Factory image size: $(echo $FINAL_SIZE | awk '{printf "%.2f MB", $1/1048576}') (kernel + padding + rootfs)"
     
     info "Factory image created: ${FACTORY_IMAGE}"
 }

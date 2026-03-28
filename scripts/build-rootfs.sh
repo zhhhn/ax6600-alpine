@@ -211,17 +211,29 @@ create_image() {
     # Clean up
     rm -rf "${ROOTFS_DIR}/var/cache/apk/*"
     
-    # Fix permissions for tar/cpio
-    chmod -R a+r "${ROOTFS_DIR}" 2>/dev/null || true
-    find "${ROOTFS_DIR}" -type d -exec chmod a+rx {} \; 2>/dev/null || true
+    # Fix permissions for tar/cpio - make everything readable
+    chmod -R u+r,g+r,o+r "${ROOTFS_DIR}" 2>/dev/null || true
+    find "${ROOTFS_DIR}" -type d -exec chmod u+rx,g+rx,o+rx {} \; 2>/dev/null || true
     
-    # Create tar.gz archive (retry with different options)
+    # Show rootfs size before packaging
+    local ROOTFS_SIZE=$(du -sb "${ROOTFS_DIR}" 2>/dev/null | cut -f1)
+    info "Rootfs directory size: $(echo $ROOTFS_SIZE | awk '{printf "%.2f MB", $1/1048576}')"
+    
+    # Create tar.gz archive (exclude problematic files)
     cd "${ROOTFS_DIR}"
-    tar --ignore-failed-read -czf "${OUTPUT_DIR}/alpine-rootfs.tar.gz" . 2>/dev/null || \
-    tar -czf "${OUTPUT_DIR}/alpine-rootfs.tar.gz" --exclude='./bin/bbsuid' . 2>/dev/null || {
+    tar --ignore-failed-read --exclude='bin/bbsuid' -czf "${OUTPUT_DIR}/alpine-rootfs.tar.gz" . 2>/dev/null || \
+    tar --exclude='bin/bbsuid' -czf "${OUTPUT_DIR}/alpine-rootfs.tar.gz" . 2>/dev/null || {
         warn "Failed to create tar.gz, creating cpio instead"
-        find . 2>/dev/null | cpio -H newc -o 2>/dev/null | gzip > "${OUTPUT_DIR}/alpine-rootfs.cpio.gz"
+        find . -print0 2>/dev/null | cpio --null -H newc -o 2>/dev/null | gzip > "${OUTPUT_DIR}/alpine-rootfs.cpio.gz"
     }
+    
+    # Show archive size
+    for f in "${OUTPUT_DIR}/alpine-rootfs.tar.gz" "${OUTPUT_DIR}/alpine-rootfs.cpio.gz"; do
+        if [ -f "$f" ]; then
+            local ARCH_SIZE=$(stat -c%s "$f" 2>/dev/null || echo 0)
+            info "Created: $f ($(echo $ARCH_SIZE | awk '{printf "%.2f MB", $1/1048576}'))"
+        fi
+    done
     
     # Verify we have at least one rootfs archive
     if [ ! -f "${OUTPUT_DIR}/alpine-rootfs.tar.gz" ] && [ ! -f "${OUTPUT_DIR}/alpine-rootfs.cpio.gz" ]; then
