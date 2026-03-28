@@ -3,7 +3,7 @@
 
 set -e
 
-PROJ_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+PROJ_DIR="$(cd "$(dirname "$0")" && pwd)"
 BUILD_DIR="${PROJ_DIR}/build"
 OUTPUT_DIR="${PROJ_DIR}/out"
 
