@@ -211,12 +211,23 @@ create_image() {
     # Clean up
     rm -rf "${ROOTFS_DIR}/var/cache/apk/*"
     
-    # Create tar.gz archive
+    # Fix permissions for tar/cpio
+    chmod -R a+r "${ROOTFS_DIR}" 2>/dev/null || true
+    find "${ROOTFS_DIR}" -type d -exec chmod a+rx {} \; 2>/dev/null || true
+    
+    # Create tar.gz archive (retry with different options)
     cd "${ROOTFS_DIR}"
-    tar -czf "${OUTPUT_DIR}/alpine-rootfs.tar.gz" . 2>/dev/null || {
+    tar --ignore-failed-read -czf "${OUTPUT_DIR}/alpine-rootfs.tar.gz" . 2>/dev/null || \
+    tar -czf "${OUTPUT_DIR}/alpine-rootfs.tar.gz" --exclude='./bin/bbsuid' . 2>/dev/null || {
         warn "Failed to create tar.gz, creating cpio instead"
-        find . | cpio -H newc -o | gzip > "${OUTPUT_DIR}/alpine-rootfs.cpio.gz"
+        find . 2>/dev/null | cpio -H newc -o 2>/dev/null | gzip > "${OUTPUT_DIR}/alpine-rootfs.cpio.gz"
     }
+    
+    # Verify we have at least one rootfs archive
+    if [ ! -f "${OUTPUT_DIR}/alpine-rootfs.tar.gz" ] && [ ! -f "${OUTPUT_DIR}/alpine-rootfs.cpio.gz" ]; then
+        error "No rootfs archive created!"
+        return 1
+    fi
     
     # Create ext4 image (for direct flashing)
     local IMAGE_SIZE="512M"

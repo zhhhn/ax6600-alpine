@@ -198,7 +198,16 @@ create_factory_image() {
         cat "${OUTPUT_DIR}/alpine-rootfs.img.gz" >> "${FACTORY_IMAGE}"
     elif [ -f "${OUTPUT_DIR}/alpine-rootfs.tar.gz" ]; then
         cat "${OUTPUT_DIR}/alpine-rootfs.tar.gz" >> "${FACTORY_IMAGE}"
+    elif [ -f "${OUTPUT_DIR}/alpine-rootfs.cpio.gz" ]; then
+        cat "${OUTPUT_DIR}/alpine-rootfs.cpio.gz" >> "${FACTORY_IMAGE}"
+        warn "Using cpio.gz format for rootfs"
+    else
+        warn "No rootfs archive found - factory image contains only kernel"
     fi
+    
+    # Show final size
+    local FINAL_SIZE=$(stat -c%s "${FACTORY_IMAGE}" 2>/dev/null || echo 0)
+    info "Factory image size: $(echo $FINAL_SIZE | awk '{printf "%.2f MB", $1/1048576}')"
     
     info "Factory image created: ${FACTORY_IMAGE}"
 }
