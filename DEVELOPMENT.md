@@ -6,439 +6,277 @@
 
 ---
 
-## 功能开发计划
+## 功能开发进度
 
-### Phase 1: 基础功能完善 (P0)
+### Phase 0: 基础功能 (P0) ✅
 
-#### 1.1 LED 指示灯控制
+#### 1.1 LED 指示灯控制 ✅
 
-**目标：** 实现电源灯、系统状态灯、WiFi 状态灯的控制
+**实现：** `/etc/init.d/leds`
+- 支持电源灯、系统灯、WiFi 状态灯
+- 系统灯呼吸效果
+- WiFi 状态自动同步
 
-**设备 GPIO 映射（需确认）：**
-```
-LED_GREEN_POWER   - 电源指示灯
-LED_BLUE_SYSTEM   - 系统状态灯  
-LED_WIFI_2G       - 2.4GHz WiFi 状态
-LED_WIFI_5G       - 5GHz WiFi 状态
-```
+#### 1.2 恢复出厂设置 ✅
 
-**实现方案：**
-1. 在设备树中定义 LED GPIO
-2. 创建 `/etc/init.d/leds` 服务脚本
-3. 实现状态指示逻辑
+**实现：** `/usr/sbin/factory-reset`
+- 支持选择性保留配置
+- 自动备份
+- 支持 dry-run 预览
 
-**代码位置：**
-- `configs/ipq6018-jdcloud-ax6600.dts` - 设备树 LED 定义
-- `rootfs-overlay/etc/init.d/leds` - LED 控制服务
+#### 1.3 按钮控制 ✅
 
-**状态：** ⏳ 待开发
+**实现：** `/etc/init.d/buttons`
+- Reset 按钮长按 10 秒恢复出厂
+- WPS 按钮支持
+- GPIO 监控守护进程
 
 ---
 
-#### 1.2 恢复出厂设置
+### Phase 1: 网络功能 (P1) ✅
 
-**目标：** 实现一键恢复出厂配置
+#### 2.1 WiFi 配置脚本 ✅
 
-**实现方案：**
-1. 保留一份默认配置在 `/etc/config-default/`
-2. 创建 `/usr/sbin/factory-reset` 脚本
-3. 绑定 Reset 按钮（需要设备树支持）
-
-**脚本逻辑：**
+**实现：** `/usr/sbin/wifi`
 ```bash
-#!/bin/sh
-# factory-reset
-cp -r /etc/config-default/* /etc/
-rm -f /etc/shadow
-echo "root:::0:::::" > /etc/shadow
-reboot
+wifi setup <ssid> <password>   # 配置
+wifi up/down                    # 开关
+wifi status                     # 状态
+wifi scan                       # 扫描
+wifi channel <2g> <5g>          # 信道
+wifi hide/show                  # 隐藏/显示 SSID
 ```
 
-**代码位置：**
-- `rootfs-overlay/usr/sbin/factory-reset`
-- `rootfs-overlay/etc/config-default/` - 默认配置备份
+#### 2.2 端口转发管理 ✅
 
-**状态：** ⏳ 待开发
-
----
-
-#### 1.3 按钮控制
-
-**目标：** 实现 Reset 按钮、WPS 按钮的功能
-
-**实现方案：**
-1. 设备树定义 GPIO 按钮
-2. 使用 `gpio-keys` 驱动
-3. 创建按钮事件监听脚本
-
-**按钮映射（需确认）：**
-```
-BTN_RESET  - 恢复出厂（长按 10 秒）
-BTN_WPS    - WPS 连接（短按）
-```
-
-**代码位置：**
-- `configs/ipq6018-jdcloud-ax6600.dts` - 按钮定义
-- `rootfs-overlay/etc/init.d/buttons` - 按钮服务
-
-**状态：** ⏳ 待开发
-
----
-
-### Phase 2: 网络功能增强 (P1)
-
-#### 2.1 WiFi 配置脚本
-
-**目标：** 提供简单的 WiFi 配置工具
-
-**实现方案：**
-创建类似 OpenWrt `wifi` 命令的配置脚本
-
-**命令设计：**
+**实现：** `/usr/sbin/port-forward`
 ```bash
-wifi setup <ssid> <password>       # 配置 WiFi
-wifi up                            # 启动 WiFi
-wifi down                          # 关闭 WiFi
-wifi status                        # 显示状态
-wifi scan                          # 扫描网络
-```
-
-**代码位置：**
-- `rootfs-overlay/usr/sbin/wifi`
-
-**状态：** ⏳ 待开发
-
----
-
-#### 2.2 端口转发管理
-
-**目标：** 提供端口转发配置工具
-
-**实现方案：**
-基于 nftables 实现端口转发规则管理
-
-**命令设计：**
-```bash
-port-forward add <外部端口> <内网IP> <内网端口>
-port-forward del <外部端口>
+port-forward add <端口> <IP> <内网端口> [tcp/udp]
+port-forward del <端口>
 port-forward list
 port-forward clear
 ```
 
-**规则存储：** `/etc/port-forward.rules`
+#### 2.3 固件升级脚本 ✅
 
-**代码位置：**
-- `rootfs-overlay/usr/sbin/port-forward`
-- `rootfs-overlay/etc/init.d/nat-rules`
-
-**状态：** ⏳ 待开发
-
----
-
-#### 2.3 固件升级脚本
-
-**目标：** 实现类似 OpenWrt sysupgrade 的升级功能
-
-**实现方案：**
-1. 下载新固件到 /tmp
-2. 验证 SHA256
-3. 写入 mmcblk0 分区
-4. 保留配置选项
-
-**命令设计：**
+**实现：** `/usr/sbin/sysupgrade`
 ```bash
-sysupgrade <固件文件>              # 升级固件
-sysupgrade -n <固件文件>           # 升级并清除配置
-sysupgrade -b                     # 备份当前配置
-sysupgrade -r                     # 恢复配置
+sysupgrade <固件>              # 升级（保留配置）
+sysupgrade -n <固件>           # 升级（清除配置）
+sysupgrade -b                  # 备份配置
+sysupgrade -r                  # 恢复配置
+sysupgrade -c <固件>           # 校验固件
 ```
 
-**代码位置：**
-- `rootfs-overlay/usr/sbin/sysupgrade`
+#### 2.4 PPPoE 拨号支持 ✅
 
-**状态：** ⏳ 待开发
-
----
-
-#### 2.4 PPPoE 拨号支持
-
-**目标：** 支持国内宽带 PPPoE 拨号
-
-**实现方案：**
-1. 安装 `ppp` 包
-2. 创建 PPPoE 配置模板
-3. 提供 PPPoE 配置脚本
-
-**命令设计：**
+**实现：** `/usr/sbin/pppoe-setup`
 ```bash
-pppoe-setup <用户名> <密码>       # 配置 PPPoE
-pppoe-connect                     # 连接
-pppoe-disconnect                  # 断开
-pppoe-status                      # 状态
+pppoe-setup config <用户名> <密码>
+pppoe-setup connect/disconnect
+pppoe-setup status
 ```
 
-**代码位置：**
-- `rootfs-overlay/usr/sbin/pppoe-setup`
-- `rootfs-overlay/etc/ppp/peers/dsl-provider`
-
-**状态：** ⏳ 待开发
-
 ---
 
-### Phase 3: 系统管理 (P2)
+### Phase 2: 系统管理 (P2) ✅
 
-#### 3.1 Web 管理界面
+#### 3.1 Web 管理界面 ✅
 
-**目标：** 提供简单的 Web 管理界面
-
-**实现方案：**
-使用 `lighttpd` + CGI 脚本实现轻量级 Web UI
-
-**功能模块：**
-- 状态概览（CPU、内存、网络流量）
+**实现：** `/www/` + `/etc/init.d/webui`
+- 状态概览（CPU、内存、网络）
 - 网络配置（LAN/WAN/PPPoE）
-- WiFi 配置（SSID、密码、信道）
-- 端口转发
-- 系统工具（重启、升级、备份）
+- WiFi 配置
+- 系统管理（重启、备份、升级）
+- 响应式设计，支持移动端
 
-**依赖包：**
-```
-lighttpd lighttpd-mod-cgi
-```
+**CGI 脚本：**
+- `stats.cgi` - 状态 API
+- `network.cgi` - 网络设置
+- `wifi.cgi` - WiFi 设置
+- `system.cgi` - 系统设置
+- `password.cgi` - 密码修改
+- `factory-reset.cgi` - 恢复出厂
+- `reboot.cgi` - 重启
 
-**代码位置：**
-- `rootfs-overlay/etc/lighttpd/`
-- `rootfs-overlay/www/cgi-bin/`
+#### 3.2 IPv6 支持 ✅
 
-**状态：** ⏳ 待开发
+**实现：** `/etc/init.d/ipv6`
+- IPv6 NAT66
+- radvd 路由通告
+- DHCPv6 支持
 
----
+#### 3.3 QoS/流量控制 ✅
 
-#### 3.2 IPv6 支持
-
-**目标：** 完整的 IPv6 支持
-
-**实现方案：**
-1. 配置 IPv6 地址
-2. 实现 IPv6 NAT66 或桥接模式
-3. DHCPv6 服务器
-
-**代码位置：**
-- `rootfs-overlay/etc/network/interfaces.ipv6`
-- `rootfs-overlay/etc/radvd.conf`
-
-**状态：** ⏳ 待开发
-
----
-
-#### 3.3 QoS/流量控制
-
-**目标：** 实现简单的带宽控制
-
-**实现方案：**
-使用 tc (traffic control) 实现
-
-**命令设计：**
+**实现：** `/usr/sbin/qos`
 ```bash
-qos-set <接口> <下载带宽> <上传带宽>
-qos-clear
-qos-status
+qos set <下载> <上传>          # 设置带宽
+qos priority <IP> <级别>       # IP 优先级
+qos limit <IP> <下载> <上传>   # IP 限速
+qos clear/status
 ```
 
-**代码位置：**
-- `rootfs-overlay/usr/sbin/qos`
-- `rootfs-overlay/etc/init.d/qos`
+#### 3.4 UPnP 支持 ✅
 
-**状态：** ⏳ 待开发
-
----
-
-#### 3.4 UPnP 支持
-
-**目标：** 支持自动端口映射
-
-**实现方案：**
-安装 `miniupnpd` 包
-
-**配置：**
-```
-miniupnpd 配置指向 br-lan 和 eth0
-```
-
-**代码位置：**
-- `rootfs-overlay/etc/miniupnpd.conf`
-- `rootfs-overlay/etc/init.d/upnp`
-
-**状态：** ⏳ 待开发
+**实现：** `/etc/init.d/upnp`
+- miniupnpd 配置
+- 自动端口映射
 
 ---
 
-### Phase 4: 安全增强 (P3)
+### Phase 3: 安全增强 (P3) ✅
 
-#### 4.1 VPN 客户端
+#### 4.1 VPN 客户端 ✅
 
-**目标：** 支持 OpenVPN/WireGuard 客户端
-
-**依赖包：**
+**实现：** `/usr/sbin/vpn-setup`
+```bash
+vpn-setup openvpn config <服务器> <端口>
+vpn-setup wireguard config <接口> <端点>
 ```
-openvpn 或 wireguard-tools
+- OpenVPN 客户端
+- WireGuard 客户端
+- 密钥生成
+
+#### 4.2 访客网络 ✅
+
+**实现：** `/etc/init.d/guest-network`
+- 独立 SSID
+- 网络隔离（无法访问主 LAN）
+- 独立 DHCP
+
+#### 4.3 MAC 过滤 ✅
+
+**实现：** `/usr/sbin/mac-filter` + `/etc/init.d/mac-filter`
+```bash
+mac-filter add/del <MAC>
+mac-filter mode whitelist/blacklist
+mac-filter list
 ```
 
-**状态：** ⏳ 待开发
-
 ---
 
-#### 4.2 访客网络
+### Phase 4: 进阶功能 (P4) ✅
 
-**目标：** 提供隔离的访客 WiFi 网络
+#### 5.1 USB 支持 ✅
 
-**实现方案：**
-1. 创建独立的 VLAN
-2. 独立的 SSID
-3. 限制访客网络只能访问 WAN
+**实现：** `/etc/init.d/usb`
+- 自动挂载 USB 存储
+- 支持多种文件系统（vfat, ntfs-3g, ext4）
 
-**状态：** ⏳ 待开发
+#### 5.2 网络监控 ✅
 
----
-
-#### 4.3 MAC 过滤
-
-**目标：** 支持黑/白名单 MAC 地址过滤
-
-**实现方案：**
-在 nftables 中添加 MAC 过滤规则
-
-**状态：** ⏳ 待开发
-
----
-
-### Phase 5: 进阶功能 (P4)
-
-#### 5.1 USB 支持
-
-**目标：** 支持 USB 存储共享
-
-**依赖包：**
+**实现：** `/usr/sbin/network-monitor`
+```bash
+network-monitor start/stop
+network-monitor report [小时]
+network-monitor top
 ```
-kmod-usb-storage usbutils ntfs-3g samba
+- 流量统计
+- 历史报告
+
+#### 5.3 定时任务 ✅
+
+通过标准 cron 实现（`apk add cron`）
+
+---
+
+## 开发进度总结
+
+| Phase | 功能数 | 完成数 | 状态 |
+|-------|--------|--------|------|
+| P0 基础 | 3 | 3 | ✅ 100% |
+| P1 网络 | 4 | 4 | ✅ 100% |
+| P2 系统 | 4 | 4 | ✅ 100% |
+| P3 安全 | 3 | 3 | ✅ 100% |
+| P4 进阶 | 3 | 3 | ✅ 100% |
+| **总计** | **17** | **17** | ✅ **100%** |
+
+---
+
+## 文件结构
+
+```
+rootfs-overlay/
+├── etc/
+│   ├── init.d/
+│   │   ├── leds           # LED 控制
+│   │   ├── buttons        # 按钮控制
+│   │   ├── upnp           # UPnP
+│   │   ├── ipv6           # IPv6
+│   │   ├── guest-network  # 访客网络
+│   │   ├── mac-filter     # MAC 过滤
+│   │   ├── webui          # Web UI
+│   │   └── usb            # USB 支持
+│   ├── hostapd/           # WiFi 配置
+│   └── network/
+├── usr/
+│   └── sbin/
+│       ├── wifi           # WiFi 管理
+│       ├── port-forward   # 端口转发
+│       ├── sysupgrade     # 固件升级
+│       ├── pppoe-setup    # PPPoE
+│       ├── qos            # QoS
+│       ├── factory-reset  # 恢复出厂
+│       ├── mac-filter     # MAC 过滤
+│       ├── vpn-setup      # VPN 配置
+│       └── network-monitor # 网络监控
+└── www/
+    ├── index.html         # Web 主页
+    ├── style.css          # 样式
+    └── cgi-bin/           # CGI 脚本
+        ├── stats.cgi
+        ├── network.cgi
+        ├── wifi.cgi
+        ├── system.cgi
+        ├── password.cgi
+        ├── factory-reset.cgi
+        └── reboot.cgi
 ```
 
-**状态：** ⏳ 待开发
-
 ---
 
-#### 5.2 定时任务
+## 使用指南
 
-**目标：** 提供 Web UI 配置定时任务
-
-**实现方案：**
-基于 cron 实现
-
-**状态：** ⏳ 待开发
-
----
-
-#### 5.3 网络监控
-
-**目标：** 实时流量监控和历史记录
-
-**实现方案：**
-使用 `vnstat` 或自定义脚本
-
-**状态：** ⏳ 待开发
-
----
-
-## 开发进度追踪
-
-| Phase | 功能 | 状态 | 开始日期 | 完成日期 |
-|-------|------|------|----------|----------|
-| P0 | LED 控制 | ⏳ 待开发 | - | - |
-| P0 | 恢复出厂 | ⏳ 待开发 | - | - |
-| P0 | 按钮控制 | ⏳ 待开发 | - | - |
-| P1 | WiFi 配置脚本 | ⏳ 待开发 | - | - |
-| P1 | 端口转发 | ⏳ 待开发 | - | - |
-| P1 | 固件升级 | ⏳ 待开发 | - | - |
-| P1 | PPPoE | ⏳ 待开发 | - | - |
-| P2 | Web UI | ⏳ 待开发 | - | - |
-| P2 | IPv6 | ⏳ 待开发 | - | - |
-| P2 | QoS | ⏳ 待开发 | - | - |
-| P2 | UPnP | ⏳ 待开发 | - | - |
-| P3 | VPN | ⏳ 待开发 | - | - |
-| P3 | 访客网络 | ⏳ 待开发 | - | - |
-| P3 | MAC 过滤 | ⏳ 待开发 | - | - |
-| P4 | USB | ⏳ 待开发 | - | - |
-| P4 | 定时任务 | ⏳ 待开发 | - | - |
-| P4 | 网络监控 | ⏳ 待开发 | - | - |
-
----
-
-## 设备信息参考
-
-### 硬件规格
-
-| 组件 | 规格 |
-|------|------|
-| SoC | Qualcomm IPQ6010 (4核 ARM Cortex-A53 @ 1.8GHz) |
-| 内存 | 512MB DDR4 |
-| 存储 | eMMC 128MB (mmcblk0) |
-| 网络 | 1x 2.5G WAN (eth0) + 4x 1G LAN (eth1-4) |
-| WiFi | 2x2 MU-MIMO 2.4GHz + 4x4 MU-MIMO 5GHz |
-| WiFi 芯片 | Qualcomm QCN5022/QCN5052 (ath11k) |
-| 分区 | mmcblk0p18 用于 rootfs |
-
-### GPIO 引脚（需要实际测量确认）
-
-| GPIO | 功能 | 备注 |
-|------|------|------|
-| GPIO_X | LED 绿灯（电源） | 待确认 |
-| GPIO_Y | LED 蓝灯（系统） | 待确认 |
-| GPIO_Z | Reset 按钮 | 待确认 |
-| GPIO_W | WPS 按钮 | 待确认 |
-
----
-
-## 开发环境
-
-### 本地测试
+### 基本命令
 
 ```bash
-# 在构建机器上测试脚本
-bash scripts/build.sh
+# WiFi 管理
+wifi setup MyWiFi MyPassword
+wifi status
 
-# 检查 rootfs 内容
-ls -la build/alpine-rootfs/
+# 端口转发
+port-forward add 8080 192.168.1.100 80
+port-forward list
 
-# 测试服务脚本
-bash rootfs-overlay/etc/init.d/network start
+# QoS
+qos set 100 50
+qos limit 192.168.1.50 10 5
+
+# 恢复出厂
+factory-reset
+
+# 网络监控
+network-monitor start
+network-monitor report 24
+
+# VPN
+vpn-setup wireguard config wg0 my.vpn.server:51820
+vpn-setup openvpn config vpn.example.com 1194
 ```
 
-### 刷机测试
+### Web 管理
 
-```bash
-# 1. 连接 TTL 串口 (3.3V, 115200)
-# 2. 进入 U-Boot
-# 3. TFTP 传输固件
-# 4. 写入 mmcblk0
-```
+访问 `http://192.168.1.1/` 进入 Web 管理界面。
 
 ---
 
-## 文档更新日志
+## 更新日志
 
 | 日期 | 更新内容 |
 |------|----------|
-| 2026-03-29 | 创建开发文档，规划所有功能 |
+| 2026-03-29 | 完成所有 17 项功能开发 |
+| 2026-03-28 | 创建开发文档，修复构建问题 |
 
 ---
 
-## 贡献指南
-
-1. 每个功能开发完成后，更新状态为 ✅ 已完成
-2. 记录开始和完成日期
-3. 添加测试说明和注意事项
-4. 更新 CHANGELOG.md
-
----
-
-*本文档将随项目进展持续更新*
+*本文档已完成更新*

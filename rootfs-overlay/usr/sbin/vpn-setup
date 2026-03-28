@@ -1,0 +1,306 @@
+#!/bin/sh
+# VPN setup utility for JDCloud AX6600
+# Supports OpenVPN and WireGuard
+
+VPN_DIR="/etc/vpn"
+OPENVPN_DIR="${VPN_DIR}/openvpn"
+WIREGUARD_DIR="${VPN_DIR}/wireguard"
+
+usage() {
+    echo "Usage: vpn-setup <type> <command> [options]"
+    echo ""
+    echo "Types: openvpn, wireguard"
+    echo ""
+    echo "OpenVPN commands:"
+    echo "  config <server> <port> <proto>    - Configure client"
+    echo "  auth <username> <password>        - Set credentials"
+    echo "  start                             - Start VPN"
+    echo "  stop                              - Stop VPN"
+    echo "  status                            - Show status"
+    echo ""
+    echo "WireGuard commands:"
+    echo "  config <interface> <endpoint>     - Configure client"
+    echo "  keygen                            - Generate keys"
+    echo "  start <interface>                 - Start WireGuard"
+    echo "  stop <interface>                  - Stop WireGuard"
+    echo "  status                            - Show status"
+}
+
+setup_dirs() {
+    mkdir -p "$OPENVPN_DIR" "$WIREGUARD_DIR"
+}
+
+# OpenVPN functions
+openvpn_config() {
+    local server="$1"
+    local port="${2:-1194}"
+    local proto="${3:-udp}"
+    
+    if [ -z "$server" ]; then
+        echo "Error: Server address required"
+        exit 1
+    fi
+    
+    setup_dirs
+    
+    cat > "${OPENVPN_DIR}/client.conf" << EOF
+client
+dev tun0
+proto ${proto}
+remote ${server} ${port}
+resolv-retry infinite
+nobind
+
+# Keep connection
+persist-key
+persist-tun
+
+# Security
+remote-cert-tls server
+cipher AES-256-CBC
+auth SHA256
+
+# Compression
+comp-lzo no
+
+# Log
+verb 3
+mute 20
+
+# Routes
+route-nopull
+route 0.0.0.0 0.0.0.0
+
+# Up/down scripts
+up /etc/vpn/openvpn/up.sh
+down /etc/vpn/openvpn/down.sh
+EOF
+    
+    # Create up/down scripts
+    cat > "${OPENVPN_DIR}/up.sh" << 'EOF'
+#!/bin/sh
+# VPN up script
+ip route add default via $route_vpn_gateway dev $dev
+echo "VPN route added"
+EOF
+    chmod +x "${OPENVPN_DIR}/up.sh"
+    
+    cat > "${OPENVPN_DIR}/down.sh" << 'EOF'
+#!/bin/sh
+# VPN down script
+ip route del default via $route_vpn_gateway 2>/dev/null || true
+ip route add default via $(ip route | grep eth0 | head -1 | awk '{print $3}')
+echo "VPN route removed"
+EOF
+    chmod +x "${OPENVPN_DIR}/down.sh"
+    
+    echo "OpenVPN configured: ${server}:${port} (${proto})"
+}
+
+openvpn_auth() {
+    local username="$1"
+    local password="$2"
+    
+    if [ -z "$username" ] || [ -z "$password" ]; then
+        echo "Error: Username and password required"
+        exit 1
+    fi
+    
+    setup_dirs
+    
+    cat > "${OPENVPN_DIR}/auth.txt" << EOF
+${username}
+${password}
+EOF
+    
+    chmod 600 "${OPENVPN_DIR}/auth.txt"
+    
+    # Add auth to config
+    sed -i '/^auth-user-pass/d' "${OPENVPN_DIR}/client.conf"
+    echo "auth-user-pass /etc/vpn/openvpn/auth.txt" >> "${OPENVPN_DIR}/client.conf"
+    
+    echo "OpenVPN credentials set"
+}
+
+openvpn_start() {
+    setup_dirs
+    
+    if [ ! -f "${OPENVPN_DIR}/client.conf" ]; then
+        echo "Error: OpenVPN not configured"
+        exit 1
+    fi
+    
+    echo "Starting OpenVPN..."
+    
+    if ! command -v openvpn > /dev/null; then
+        echo "Error: openvpn not installed"
+        echo "Install: apk add openvpn"
+        exit 1
+    fi
+    
+    openvpn --config "${OPENVPN_DIR}/client.conf" --daemon
+    
+    sleep 3
+    
+    if ip addr show tun0 2>/dev/null; then
+        echo "OpenVPN connected"
+        echo "Interface: tun0"
+    else
+        echo "OpenVPN starting, check status in 10 seconds"
+    fi
+}
+
+openvpn_stop() {
+    echo "Stopping OpenVPN..."
+    killall openvpn 2>/dev/null || true
+    echo "OpenVPN stopped"
+}
+
+openvpn_status() {
+    echo "=== OpenVPN Status ==="
+    
+    if [ -f "${OPENVPN_DIR}/client.conf" ]; then
+        echo "Configuration: yes"
+        echo "Server: $(grep remote ${OPENVPN_DIR}/client.conf | awk '{print $2}')"
+    else
+        echo "Configuration: no"
+    fi
+    
+    if ip addr show tun0 2>/dev/null; then
+        echo "Status: connected"
+        echo "Interface: tun0"
+        echo "IP: $(ip addr show tun0 | grep inet | awk '{print $2}')"
+    elif pgrep openvpn > /dev/null; then
+        echo "Status: connecting..."
+    else
+        echo "Status: not running"
+    fi
+}
+
+# WireGuard functions
+wireguard_config() {
+    local interface="$1"
+    local endpoint="$2"
+    
+    if [ -z "$interface" ] || [ -z "$endpoint" ]; then
+        echo "Error: Interface name and endpoint required"
+        exit 1
+    fi
+    
+    setup_dirs
+    
+    # Generate keys if not exist
+    wireguard_keygen
+    
+    local private_key=$(cat "${WIREGUARD_DIR}/private.key")
+    
+    cat > "${WIREGUARD_DIR}/${interface}.conf" << EOF
+[Interface]
+PrivateKey = ${private_key}
+Address = 10.0.0.2/24
+ListenPort = 51820
+
+[Peer]
+PublicKey = (add server public key)
+Endpoint = ${endpoint}:51820
+AllowedIPs = 0.0.0.0/0
+PersistentKeepalive = 25
+EOF
+    
+    chmod 600 "${WIREGUARD_DIR}/${interface}.conf"
+    
+    echo "WireGuard configured: ${interface}"
+    echo "Edit ${WIREGUARD_DIR}/${interface}.conf to add server PublicKey"
+}
+
+wireguard_keygen() {
+    setup_dirs
+    
+    if [ ! -f "${WIREGUARD_DIR}/private.key" ]; then
+        if ! command -v wg > /dev/null; then
+            echo "Error: wireguard-tools not installed"
+            echo "Install: apk add wireguard-tools"
+            exit 1
+        fi
+        
+        wg genkey > "${WIREGUARD_DIR}/private.key"
+        wg pubkey < "${WIREGUARD_DIR}/private.key" > "${WIREGUARD_DIR}/public.key"
+        
+        chmod 600 "${WIREGUARD_DIR}/private.key"
+        
+        echo "WireGuard keys generated"
+        echo "Public key: $(cat ${WIREGUARD_DIR}/public.key)"
+    else
+        echo "Keys already exist"
+        echo "Public key: $(cat ${WIREGUARD_DIR}/public.key)"
+    fi
+}
+
+wireguard_start() {
+    local interface="$1"
+    interface="${interface:-wg0}"
+    
+    if [ ! -f "${WIREGUARD_DIR}/${interface}.conf" ]; then
+        echo "Error: WireGuard not configured for ${interface}"
+        exit 1
+    fi
+    
+    if ! command -v wg-quick > /dev/null; then
+        echo "Error: wireguard-tools not installed"
+        exit 1
+    fi
+    
+    echo "Starting WireGuard ${interface}..."
+    wg-quick up "${WIREGUARD_DIR}/${interface}.conf"
+    
+    echo "WireGuard started"
+}
+
+wireguard_stop() {
+    local interface="$1"
+    interface="${interface:-wg0}"
+    
+    echo "Stopping WireGuard ${interface}..."
+    wg-quick down "${WIREGUARD_DIR}/${interface}.conf" 2>/dev/null || \
+        ip link del ${interface} 2>/dev/null || true
+    
+    echo "WireGuard stopped"
+}
+
+wireguard_status() {
+    echo "=== WireGuard Status ==="
+    
+    if command -v wg > /dev/null; then
+        wg show 2>/dev/null || echo "No WireGuard interfaces"
+    else
+        echo "wireguard-tools not installed"
+    fi
+    
+    echo ""
+    echo "Configurations:"
+    ls -la "${WIREGUARD_DIR}"/*.conf 2>/dev/null || echo "  No configs"
+}
+
+# Main
+if [ "$1" = "openvpn" ]; then
+    case "$2" in
+        config) openvpn_config "$3" "$4" "$5" ;;
+        auth) openvpn_auth "$3" "$4" ;;
+        start) openvpn_start ;;
+        stop) openvpn_stop ;;
+        status) openvpn_status ;;
+        *) echo "Unknown OpenVPN command"; usage; exit 1 ;;
+    esac
+elif [ "$1" = "wireguard" ]; then
+    case "$2" in
+        config) wireguard_config "$3" "$4" ;;
+        keygen) wireguard_keygen ;;
+        start) wireguard_start "$3" ;;
+        stop) wireguard_stop "$3" ;;
+        status) wireguard_status ;;
+        *) echo "Unknown WireGuard command"; usage; exit 1 ;;
+    esac
+else
+    usage
+    exit 1
+fi

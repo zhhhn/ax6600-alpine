@@ -1,0 +1,124 @@
+#!/sbin/openrc-run
+# IPv6 service for JDCloud AX6600
+
+name="ipv6"
+description="IPv6 network configuration"
+
+depend() {
+    after net
+    need net
+}
+
+start() {
+    ebegin "Starting IPv6"
+    
+    # Enable IPv6 forwarding
+    echo 1 > /proc/sys/net/ipv6/conf/all/forwarding
+    
+    # Add IPv6 address to LAN bridge
+    ip -6 addr add fd00::1/64 dev br-lan 2>/dev/null || true
+    
+    # Enable IPv6 on WAN
+    ip -6 addr add fe80::1/64 dev eth0 2>/dev/null || true
+    
+    # Setup IPv6 NAT66 if needed
+    setup_nat66
+    
+    # Start radvd if available
+    if command -v radvd > /dev/null; then
+        create_radvd_config
+        radvd -C /etc/radvd.conf 2>/dev/null && \
+            radvd 2>/dev/null || true
+    fi
+    
+    # Start dnsmasq IPv6
+    if command -v dnsmasq > /dev/null; then
+        # Restart dnsmasq with IPv6
+        killall dnsmasq 2>/dev/null || true
+        dnsmasq --listen-address=::1,fd00::1 \
+                --dhcp-range=fd00::100,fd00::200 \
+                -C /etc/dnsmasq.conf 2>/dev/null || true
+    fi
+    
+    eend $?
+}
+
+stop() {
+    ebegin "Stopping IPv6"
+    
+    # Stop radvd
+    killall radvd 2>/dev/null || true
+    
+    # Remove IPv6 addresses
+    ip -6 addr del fd00::1/64 dev br-lan 2>/dev/null || true
+    
+    # Disable forwarding
+    echo 0 > /proc/sys/net/ipv6/conf/all/forwarding
+    
+    eend $?
+}
+
+setup_nat66() {
+    # Setup IPv6 NAT using nftables
+    if command -v nft > /dev/null; then
+        nft add table ip6 nat 2>/dev/null || true
+        nft add chain ip6 nat postrouting { type nat hook postrouting priority 100 \; } 2>/dev/null || true
+        nft add rule ip6 nat postrouting oifname eth0 masquerade 2>/dev/null || true
+        
+        # Add filter rules
+        nft add table ip6 filter 2>/dev/null || true
+        nft add chain ip6 filter forward { type filter hook forward priority 0 \; } 2>/dev/null || true
+        nft add rule ip6 filter forward iifname br-lan oifname eth0 accept 2>/dev/null || true
+        nft add rule ip6 filter forward iifname eth0 oifname br-lan ct state established,related accept 2>/dev/null || true
+    fi
+}
+
+create_radvd_config() {
+    cat > /etc/radvd.conf << 'EOF'
+interface br-lan
+{
+    AdvSendAdvert on;
+    AdvManagedFlag on;
+    AdvOtherConfigFlag on;
+    
+    prefix fd00::/64
+    {
+        AdvOnLink on;
+        AdvAutonomous on;
+        AdvRouterAddr on;
+    };
+    
+    RDNSS fd00::1
+    {
+        AdvRDNSSLifetime 300;
+    };
+};
+EOF
+}
+
+status() {
+    echo "=== IPv6 Status ==="
+    
+    # Check forwarding
+    local fwd=$(cat /proc/sys/net/ipv6/conf/all/forwarding)
+    echo "IPv6 forwarding: $fwd"
+    
+    # Show IPv6 addresses
+    echo "IPv6 addresses:"
+    ip -6 addr show | grep inet6 | head -10
+    
+    # Show routes
+    echo "IPv6 routes:"
+    ip -6 route show | head -10
+    
+    # radvd status
+    if command -v radvd > /dev/null; then
+        if pgrep radvd > /dev/null; then
+            echo "radvd: running"
+        else
+            echo "radvd: not running"
+        fi
+    else
+        echo "radvd: not installed (apk add radvd)"
+    fi
+}

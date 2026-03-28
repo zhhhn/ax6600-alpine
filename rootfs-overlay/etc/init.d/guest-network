@@ -1,0 +1,178 @@
+#!/sbin/openrc-run
+# Guest network service for JDCloud AX6600
+
+name="guest-network"
+description="Guest WiFi network with isolation"
+
+GUEST_SSID="AX6600-Guest"
+GUEST_PASSWORD="guest123456"
+GUEST_BRIDGE="br-guest"
+GUEST_IP="192.168.2.1"
+
+depend() {
+    after net wifi
+    need net
+}
+
+start() {
+    ebegin "Starting guest network"
+    
+    # Create guest bridge
+    create_guest_bridge
+    
+    # Setup guest WiFi (if wlan2 available or virtual interface)
+    setup_guest_wifi
+    
+    # Setup isolation (no access to main LAN)
+    setup_isolation
+    
+    # Setup DHCP for guest network
+    setup_guest_dhcp
+    
+    eend $?
+}
+
+stop() {
+    ebegin "Stopping guest network"
+    
+    # Remove firewall rules
+    remove_isolation
+    
+    # Stop DHCP
+    kill $(cat /var/run/dnsmasq-guest.pid) 2>/dev/null || true
+    
+    # Remove guest bridge
+    ip link set $GUEST_BRIDGE down 2>/dev/null || true
+    brctl delbr $GUEST_BRIDGE 2>/dev/null || true
+    
+    eend $?
+}
+
+create_guest_bridge() {
+    # Create bridge for guest network
+    if ! ip link show $GUEST_BRIDGE 2>/dev/null; then
+        brctl addbr $GUEST_BRIDGE
+        ip link set $GUEST_BRIDGE up
+        
+        # Assign IP
+        ip addr add ${GUEST_IP}/24 dev $GUEST_BRIDGE
+    fi
+}
+
+setup_guest_wifi() {
+    # Create virtual interface for guest WiFi
+    # This requires iw to create VIF
+    
+    if command -v iw > /dev/null; then
+        # Try to add virtual interface
+        iw dev wlan0 interface add wlan0-guest type managed 2>/dev/null || true
+        
+        if ip link show wlan0-guest 2>/dev/null; then
+            ip link set wlan0-guest up
+            brctl addif $GUEST_BRIDGE wlan0-guest
+            
+            # Start hostapd for guest
+            create_guest_hostapd_config
+            hostapd -B -P /var/run/hostapd-guest.pid /etc/hostapd/hostapd-guest.conf 2>/dev/null || true
+        fi
+    fi
+    
+    # Alternative: use separate SSID on same radio
+    if ! ip link show wlan0-guest 2>/dev/null; then
+        # Modify main hostapd to add guest BSS
+        if [ -f /etc/hostapd/hostapd.conf ]; then
+            grep -q "bss=wlan0-guest" /etc/hostapd/hostapd.conf || \
+                cat >> /etc/hostapd/hostapd.conf << EOF
+
+# Guest BSS
+bss=wlan0-guest
+ssid=$GUEST_SSID
+wpa=2
+wpa_passphrase=$GUEST_PASSWORD
+wpa_key_mgmt=WPA-PSK
+EOF
+            
+            # Restart hostapd to apply
+            killall hostapd 2>/dev/null || true
+            sleep 2
+            hostapd -B /etc/hostapd/hostapd.conf 2>/dev/null || true
+        fi
+    fi
+}
+
+create_guest_hostapd_config() {
+    cat > /etc/hostapd/hostapd-guest.conf << EOF
+interface=wlan0-guest
+bridge=$GUEST_BRIDGE
+driver=nl80211
+ssid=$GUEST_SSID
+country_code=CN
+hw_mode=g
+channel=6
+ieee80211n=1
+wpa=2
+wpa_passphrase=$GUEST_PASSWORD
+wpa_key_mgmt=WPA-PSK
+rsn_pairwise=CCMP
+EOF
+}
+
+setup_isolation() {
+    # Firewall rules to isolate guest network
+    
+    # Allow guest to access WAN only (not LAN)
+    nft add table inet guest-filter 2>/dev/null || true
+    nft add chain inet guest-filter forward { type filter hook forward priority 0 \; } 2>/dev/null || true
+    
+    # Allow guest -> WAN
+    nft add rule inet guest-filter forward iifname $GUEST_BRIDGE oifname eth0 accept 2>/dev/null || true
+    
+    # Block guest -> LAN (192.168.1.0/24)
+    nft add rule inet guest-filter forward iifname $GUEST_BRIDGE ip daddr 192.168.1.0/24 drop 2>/dev/null || true
+    
+    # NAT for guest
+    nft add table ip guest-nat 2>/dev/null || true
+    nft add chain ip guest-nat postrouting { type nat hook postrouting priority 100 \; } 2>/dev/null || true
+    nft add rule ip guest-nat postrouting iifname $GUEST_BRIDGE oifname eth0 masquerade 2>/dev/null || true
+}
+
+remove_isolation() {
+    nft delete table inet guest-filter 2>/dev/null || true
+    nft delete table ip guest-nat 2>/dev/null || true
+}
+
+setup_guest_dhcp() {
+    # Start dnsmasq for guest network
+    dnsmasq \
+        --pid-file=/var/run/dnsmasq-guest.pid \
+        --interface=$GUEST_BRIDGE \
+        --bind-interfaces \
+        --dhcp-range=192.168.2.100,192.168.2.200,12h \
+        --dhcp-option=3,$GUEST_IP \
+        --dhcp-option=6,$GUEST_IP \
+        2>/dev/null || true
+}
+
+status() {
+    echo "=== Guest Network Status ==="
+    
+    if ip link show $GUEST_BRIDGE 2>/dev/null; then
+        echo "Guest bridge: up"
+        echo "Guest IP: $(ip addr show $GUEST_BRIDGE | grep inet | awk '{print $2}')"
+    else
+        echo "Guest bridge: not configured"
+    fi
+    
+    if pgrep -f hostapd-guest > /dev/null; then
+        echo "Guest WiFi: running"
+        echo "SSID: $GUEST_SSID"
+    else
+        echo "Guest WiFi: not running"
+    fi
+    
+    if [ -f /var/run/dnsmasq-guest.pid ]; then
+        echo "Guest DHCP: running"
+    else
+        echo "Guest DHCP: not running"
+    fi
+}

@@ -1,0 +1,291 @@
+#!/bin/sh
+# Factory reset utility for JDCloud AX6600
+# Restore system to default configuration
+
+CONFIG_BACKUP="/etc/config-default"
+
+usage() {
+    echo "Usage: factory-reset [options]"
+    echo "Options:"
+    echo "  --keep-network    Keep network configuration"
+    echo "  --keep-wifi       Keep WiFi configuration"
+    echo "  --keep-password   Keep root password"
+    echo "  --full            Full reset (clear all, including rootfs)"
+    echo "  --backup          Create backup before reset"
+    echo "  --dry-run         Show what would be reset"
+    echo "  --help            Show this help"
+}
+
+create_default_config() {
+    mkdir -p "$CONFIG_BACKUP"
+    
+    # Save default network config
+    cat > "${CONFIG_BACKUP}/network/interfaces" << 'EOF'
+# Network interfaces configuration for JDCloud AX6600 (default)
+
+auto lo
+iface lo inet loopback
+
+auto eth0
+iface eth0 inet dhcp
+
+auto br-lan
+iface br-lan inet static
+    address 192.168.1.1
+    netmask 255.255.255.0
+    bridge_ports eth1 eth2 eth3 eth4
+
+auto eth1
+iface eth1 inet manual
+
+auto eth2
+iface eth2 inet manual
+
+auto eth3
+iface eth3 inet manual
+
+auto eth4
+iface eth4 inet manual
+EOF
+    
+    # Save default WiFi config
+    cat > "${CONFIG_BACKUP}/hostapd/hostapd.conf" << 'EOF'
+interface=wlan0
+bridge=br-lan
+driver=nl80211
+ssid=AX6600
+country_code=CN
+hw_mode=g
+channel=6
+ieee80211n=1
+ht_capab=[HT40+][SHORT-GI-20][SHORT-GI-40]
+wpa=2
+wpa_passphrase=admin123
+wpa_key_mgmt=WPA-PSK
+rsn_pairwise=CCMP
+EOF
+    
+    mkdir -p "${CONFIG_BACKUP}/hostapd"
+    cat > "${CONFIG_BACKUP}/hostapd/hostapd-5g.conf" << 'EOF'
+interface=wlan1
+bridge=br-lan
+driver=nl80211
+ssid=AX6600-5G
+country_code=CN
+hw_mode=a
+channel=36
+ieee80211n=1
+ieee80211ac=1
+ht_capab=[HT40+][SHORT-GI-20][SHORT-GI-40]
+vht_capab=[MAX-MPDU-7991][SU-BEAMFORMEE]
+vht_oper_chwidth=1
+vht_oper_centr_freq_seg0_idx=42
+wpa=2
+wpa_passphrase=admin123
+wpa_key_mgmt=WPA-PSK
+rsn_pairwise=CCMP
+EOF
+    
+    # Save default dnsmasq config
+    cat > "${CONFIG_BACKUP}/dnsmasq.conf" << 'EOF'
+interface=br-lan
+listen-address=127.0.0.1,192.168.1.1
+dhcp-range=192.168.1.100,192.168.1.250,255.255.255.0,12h
+dhcp-option=3,192.168.1.1
+dhcp-option=6,192.168.1.1
+server=223.5.5.5
+server=223.6.6.6
+cache-size=1000
+EOF
+    
+    # Save default firewall config
+    cat > "${CONFIG_BACKUP}/nftables.conf" << 'EOF'
+#!/usr/sbin/nft -f
+flush ruleset
+
+table inet filter {
+    chain input {
+        type filter hook input priority 0; policy drop;
+        ct state established,related accept
+        iif "lo" accept
+        icmp type echo-request accept
+        tcp dport 22 accept
+        udp dport 53 accept
+        tcp dport 53 accept
+        udp dport 67 accept
+    }
+    chain forward {
+        type filter hook forward priority 0; policy drop;
+        ct state established,related accept
+        iifname "br-lan" oifname "eth0" accept
+        iifname "br-lan" oifname "br-lan" accept
+    }
+    chain output {
+        type filter hook output priority 0; policy accept;
+    }
+}
+
+table ip nat {
+    chain postrouting {
+        type nat hook postrouting priority 100;
+        oifname "eth0" masquerade
+    }
+}
+EOF
+    
+    # Default password (empty - should be changed after boot)
+    cat > "${CONFIG_BACKUP}/shadow" << 'EOF'
+root:::0:::::
+EOF
+    
+    cat > "${CONFIG_BACKUP}/passwd" << 'EOF'
+root:x:0:0:root:/root:/bin/ash
+EOF
+    
+    echo "Default configuration saved to $CONFIG_BACKUP"
+}
+
+do_backup() {
+    local backup_file="/tmp/pre-reset-backup-$(date +%Y%m%d-%H%M%S).tar.gz"
+    
+    echo "Creating backup before reset..."
+    
+    tar -czf "$backup_file" \
+        /etc/network/interfaces \
+        /etc/hostapd/*.conf \
+        /etc/dnsmasq.conf \
+        /etc/nftables.conf \
+        /etc/shadow \
+        /etc/passwd \
+        /etc/port-forward.rules \
+        2>/dev/null || true
+    
+    echo "Backup saved: $backup_file"
+}
+
+do_reset() {
+    local keep_network="$1"
+    local keep_wifi="$2"
+    local keep_password="$3"
+    
+    echo "=== Factory Reset ==="
+    echo ""
+    
+    # Ensure default configs exist
+    if [ ! -d "$CONFIG_BACKUP" ]; then
+        create_default_config
+    fi
+    
+    # Show what will be reset
+    echo "Will reset:"
+    [ "$keep_network" != "1" ] && echo "  - Network configuration"
+    [ "$keep_wifi" != "1" ] && echo "  - WiFi configuration"
+    [ "$keep_password" != "1" ] && echo "  - Root password"
+    echo "  - Firewall rules"
+    echo "  - DHCP/DNS settings"
+    echo "  - Port forwarding rules"
+    echo ""
+    
+    # Reset network
+    if [ "$keep_network" != "1" ]; then
+        echo "Resetting network configuration..."
+        cp "${CONFIG_BACKUP}/network/interfaces" /etc/network/interfaces
+    fi
+    
+    # Reset WiFi
+    if [ "$keep_wifi" != "1" ]; then
+        echo "Resetting WiFi configuration..."
+        mkdir -p /etc/hostapd
+        cp "${CONFIG_BACKUP}/hostapd/hostapd.conf" /etc/hostapd/hostapd.conf
+        cp "${CONFIG_BACKUP}/hostapd/hostapd-5g.conf" /etc/hostapd/hostapd-5g.conf
+    fi
+    
+    # Reset password
+    if [ "$keep_password" != "1" ]; then
+        echo "Resetting root password..."
+        cp "${CONFIG_BACKUP}/shadow" /etc/shadow
+        cp "${CONFIG_BACKUP}/passwd" /etc/passwd
+    fi
+    
+    # Reset firewall
+    echo "Resetting firewall..."
+    cp "${CONFIG_BACKUP}/nftables.conf" /etc/nftables.conf
+    
+    # Reset DHCP/DNS
+    echo "Resetting DHCP/DNS..."
+    cp "${CONFIG_BACKUP}/dnsmasq.conf" /etc/dnsmasq.conf
+    
+    # Clear port forwarding
+    echo "Clearing port forwarding rules..."
+    rm -f /etc/port-forward.rules
+    touch /etc/port-forward.rules
+    
+    # Clear QoS
+    echo "Clearing QoS..."
+    rm -f /etc/qos.conf
+    /usr/sbin/qos clear 2>/dev/null || true
+    
+    # Clear PPPoE config
+    echo "Clearing PPPoE configuration..."
+    rm -f /etc/ppp/peers/pppoe
+    rm -f /etc/network/interfaces.d/pppoe
+    
+    echo ""
+    echo "=== Reset Complete ==="
+    echo "System will reboot to apply changes..."
+    echo ""
+    
+    read -p "Reboot now? [y/N]: " confirm
+    if [ "$confirm" = "y" ]; then
+        reboot
+    else
+        echo "Please reboot manually to apply changes: reboot"
+    fi
+}
+
+do_dry_run() {
+    echo "=== Factory Reset (Dry Run) ==="
+    echo "Would reset:"
+    echo "  - Network: /etc/network/interfaces"
+    echo "  - WiFi: /etc/hostapd/*.conf"
+    echo "  - Firewall: /etc/nftables.conf"
+    echo "  - DHCP: /etc/dnsmasq.conf"
+    echo "  - Password: /etc/shadow, /etc/passwd"
+    echo "  - Port forwarding: /etc/port-forward.rules"
+    echo "  - QoS: /etc/qos.conf"
+    echo "  - PPPoE: /etc/ppp/peers/pppoe"
+    echo ""
+    echo "No changes made."
+}
+
+# Parse arguments
+keep_network=0
+keep_wifi=0
+keep_password=0
+do_backup_first=0
+dry_run=0
+full_reset=0
+
+for arg in "$@"; do
+    case "$arg" in
+        --keep-network) keep_network=1 ;;
+        --keep-wifi) keep_wifi=1 ;;
+        --keep-password) keep_password=1 ;;
+        --backup) do_backup_first=1 ;;
+        --dry-run) dry_run=1 ;;
+        --full) full_reset=1 ;;
+        --help|-h) usage; exit 0 ;;
+    esac
+done
+
+# Execute
+if [ "$dry_run" = "1" ]; then
+    do_dry_run
+elif [ "$full_reset" = "1" ]; then
+    echo "WARNING: Full reset will erase rootfs!"
+    read -p "This is destructive! Continue? [y/N]: " confirm
+    [ "$confirm" = "y" ] && echo "Full reset requires mmc flash - not implemented" && exit 1
+else
+    [ "$do_backup_first" = "1" ] && do_backup
+    do_reset "$keep_network" "$keep_wifi" "$keep_password"
+fi
