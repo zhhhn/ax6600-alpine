@@ -1,0 +1,78 @@
+name: Build AX6600 Alpine Firmware
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install build dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          flex \
+          bison \
+          libncurses-dev \
+          libssl-dev \
+          bc \
+          u-boot-tools \
+          wget \
+          git \
+          cpio \
+          gzip \
+          tar
+
+    - name: Install cross compiler
+      run: |
+        sudo apt-get install -y gcc-aarch64-linux-gnu
+
+    - name: Build firmware
+      run: |
+        chmod +x scripts/*.sh
+        ./build.sh
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ax6600-alpine-firmware
+        path: |
+          out/*.bin
+          out/*.itb
+          out/*.txt
+          out/SHA256SUMS
+        retention-days: 30
+
+    - name: Create Release
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v${{ github.run_number }}
+        name: AX6600 Alpine Firmware v${{ github.run_number }}
+        body: |
+          Automated build of JDCloud AX6600 Alpine Linux firmware
+          
+          ## Files
+          - `ax6600-alpine-factory.bin` - Flashable firmware image
+          - `flash-commands.txt` - U-Boot flash instructions
+          - `install.sh` - Installation script
+          
+          ## Flashing
+          See `flash-commands.txt` for U-Boot TFTP flashing instructions.
+        files: |
+          out/ax6600-alpine-factory.bin
+          out/ax6600-alpine.itb
+          out/flash-commands.txt
+          out/install.sh
+          out/SHA256SUMS
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -11,9 +11,14 @@ build/initramfs-minimal/
 !configs/
 !rootfs-overlay/
 !scripts/
-!.github/
 
-# 文档
+# 保留GitHub Actions工作流
+!.github/
+!.github/workflows/
+!.github/workflows/*.yml
+!.github/*.md
+
+# 排除文档（但保留关键文档）
 *.md
 !README.md
 !INSTALL.md
@@ -27,9 +32,6 @@ build/initramfs-minimal/
 !PROGRESS.md
 !PROJECT.md
 !READY.md
-
-# GitHub Actions
-.github/workflows/*.yml
 
 # 脚本
 *.sh
