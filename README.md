@@ -174,3 +174,4 @@ ax6600-alpine/
 ---
 
 **Made with ⚡ by router enthusiasts**
+# Build trigger
