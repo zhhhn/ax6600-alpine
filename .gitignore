@@ -32,6 +32,8 @@ build/initramfs-minimal/
 !PROGRESS.md
 !PROJECT.md
 !READY.md
+!DEVELOPMENT.md
+!CHANGELOG.md
 
 # 脚本
 *.sh
