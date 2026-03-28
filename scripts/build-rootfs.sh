@@ -113,24 +113,43 @@ alpine-devel@lists.alpinelinux.org-6165ee59.rsa.pub"
         warn "Failed to download key: ${key}"
     done
     
-    # Install base packages ( tolerant of post-install errors in CI containers)
+    # Install base packages (skip scripts for CI containers without chroot capability)
     local BASE_PKGS="alpine-baselayout musl busybox busybox-suid openrc"
-    "${APK_STATIC}" add --root "${ROOTFS_DIR}" --initdb --no-cache --allow-untrusted ${BASE_PKGS} || true
+    "${APK_STATIC}" add --root "${ROOTFS_DIR}" --initdb --no-cache --allow-untrusted --no-scripts ${BASE_PKGS} || true
+    
+    # Manually create essential symlinks that post-install would have made
+    ln -sf busybox "${ROOTFS_DIR}/bin/sh" 2>/dev/null || true
+    ln -sf ../bin/busybox "${ROOTFS_DIR}/sbin/init" 2>/dev/null || true
+    
+    # Create essential directories that alpine-baselayout would have made
+    mkdir -p "${ROOTFS_DIR}/var/run" "${ROOTFS_DIR}/run" 2>/dev/null || true
+    ln -sf /run "${ROOTFS_DIR}/var/run" 2>/dev/null || true
     
     # Verify base packages were installed
-    if [ ! -f "${ROOTFS_DIR}/bin/busybox" ] || [ ! -f "${ROOTFS_DIR}/sbin/init" ]; then
+    if [ ! -f "${ROOTFS_DIR}/bin/busybox" ]; then
         error "Base packages were not installed correctly"
         exit 1
     fi
+    
+    # Create init if openrc exists
+    if [ -f "${ROOTFS_DIR}/sbin/openrc-init" ]; then
+        ln -sf openrc-init "${ROOTFS_DIR}/sbin/init" 2>/dev/null || true
+    elif [ -f "${ROOTFS_DIR}/sbin/init" ]; then
+        : # init already exists
+    else
+        # Use busybox init as fallback
+        ln -sf busybox "${ROOTFS_DIR}/sbin/init" 2>/dev/null || true
+    fi
+    
     info "Base packages installed successfully"
     
-    # Install additional packages (tolerant of post-install errors)
+    # Install additional packages (skip scripts for CI)
     local EXTRA_PKGS="e2fsprogs dosfstools util-linux kmod wireless-tools wpa_supplicant
 iw dnsmasq nftables iptables iproute2 bridge-utils ethtool tcpdump curl wget
 ca-certificates openssl dropbear rsync tar gzip xz vim nano htop chrony
 tzdata eudev procps coreutils findutils grep sed gawk"
     
-    "${APK_STATIC}" add --root "${ROOTFS_DIR}" --no-cache --allow-untrusted ${EXTRA_PKGS} || true
+    "${APK_STATIC}" add --root "${ROOTFS_DIR}" --no-cache --allow-untrusted --no-scripts ${EXTRA_PKGS} || true
     
     # Verify at least some critical packages were installed
     if [ -f "${ROOTFS_DIR}/usr/bin/wget" ] || [ -f "${ROOTFS_DIR}/usr/bin/curl" ]; then
