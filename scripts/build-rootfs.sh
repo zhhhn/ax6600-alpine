@@ -42,14 +42,14 @@ create_devices() {
     
     cd "${ROOTFS_DIR}/dev"
     
-    # Basic devices
-    mknod -m 666 null c 1 3
-    mknod -m 666 zero c 1 5
-    mknod -m 666 random c 1 8
-    mknod -m 666 urandom c 1 9
-    mknod -m 666 tty c 5 0
-    mknod -m 600 console c 5 1
-    mknod -m 666 full c 1 7
+    # Basic devices (non-fatal for CI environments without mknod capability)
+    mknod -m 666 null c 1 3 2>/dev/null || warn "Cannot create null device (running in container?)"
+    mknod -m 666 zero c 1 5 2>/dev/null || true
+    mknod -m 666 random c 1 8 2>/dev/null || true
+    mknod -m 666 urandom c 1 9 2>/dev/null || true
+    mknod -m 666 tty c 5 0 2>/dev/null || true
+    mknod -m 600 console c 5 1 2>/dev/null || true
+    mknod -m 666 full c 1 7 2>/dev/null || true
     
     # Serial ports
     mknod -m 660 ttyMSM0 c 4 64 2>/dev/null || true
