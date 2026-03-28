@@ -1,0 +1,238 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * Device Tree Source for JDCloud AX6600 (Athena)
+ * Based on IPQ6018 reference design
+ * 
+ * SoC: Qualcomm IPQ6010 (compatible with IPQ6018)
+ * WiFi: QCN5022 (2.4G) + QCN5052 (5G) + QCN9074 (5G PCIe)
+ * Ethernet: 1x2.5G + 4x1G with NSS
+ * Storage: 64GB eMMC
+ * Memory: 512MB DDR3 (stock) / 2GB DDR4 (modded)
+ */
+
+/dts-v1/;
+
+#include "ipq6018.dtsi"
+
+/ {
+	model = "JDCloud AX6600 (Athena)";
+	compatible = "jdcloud,ax6600", "qcom,ipq6018", "qcom,ipq6010";
+
+	aliases {
+		serial0 = &blsp1_uart2;
+		ethernet0 = &gmac1;
+		ethernet1 = &gmac2;
+		ethernet2 = &gmac3;
+		ethernet3 = &gmac4;
+		ethernet4 = &gmac5;
+		mmc0 = &sdhci_0;
+	};
+
+	chosen {
+		bootargs = "console=ttyMSM0,115200n8 root=/dev/mmcblk0p18 rw rootwait";
+		stdout-path = "serial0:115200n8";
+	};
+
+	memory@40000000 {
+		device_type = "memory";
+		reg = <0x0 0x40000000 0x0 0x20000000>; /* 512MB stock */
+	};
+
+	/* WiFi regulators */
+	vreg_wlan_1p8: vreg_wlan_1p8 {
+		compatible = "regulator-fixed";
+		regulator-name = "vreg_wlan_1p8";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		gpio = <&tlmm 52 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
+
+	vreg_wlan_3p3: vreg_wlan_3p3 {
+		compatible = "regulator-fixed";
+		regulator-name = "vreg_wlan_3p3";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		gpio = <&tlmm 53 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
+
+	/* USB 3.0 VBUS */
+	vreg_usb_5p0: vreg_usb_5p0 {
+		compatible = "regulator-fixed";
+		regulator-name = "vreg_usb_5p0";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpio = <&tlmm 54 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
+};
+
+&blsp1_uart2 {
+	status = "okay";
+};
+
+&sdhci_0 {
+	status = "okay";
+	bus-width = <8>;
+	non-removable;
+	max-frequency = <192000000>;
+	
+	/* eMMC HS200 mode */
+	mmc-hs200-1_8v;
+	vmmc-supply = <&vreg_l5a_2p9>;
+	vqmmc-supply = <&vreg_l6a_1p8>;
+};
+
+/* PCIe for external WiFi module (QCN9074 or similar) */
+&pcie0 {
+	status = "okay";
+	reset-gpio = <&tlmm 38 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&pcie0_pins>;
+	pinctrl-names = "default";
+	
+	perst-gpio = <&tlmm 38 GPIO_ACTIVE_LOW>;
+	vpcie3v3-supply = <&vreg_wlan_3p3>;
+};
+
+&pcie0_phy {
+	status = "okay";
+};
+
+/* Internal WiFi (QCN5022/QCN5052) - AHB connected */
+&wifi0 {
+	status = "okay";
+	qcom,ath11k-calibration-variant = "JDCloud-AX6600-2.4G";
+};
+
+&wifi1 {
+	status = "okay";
+	qcom,ath11k-calibration-variant = "JDCloud-AX6600-5G";
+};
+
+/* Ethernet PHY configuration */
+&mdio {
+	status = "okay";
+
+	phy0: ethernet-phy@0 {
+		reg = <0>;
+		qca,phy-mode = "sgmii";
+	};
+
+	phy1: ethernet-phy@1 {
+		reg = <1>;
+		qca,phy-mode = "sgmii";
+	};
+
+	phy2: ethernet-phy@2 {
+		reg = <2>;
+		qca,phy-mode = "sgmii";
+	};
+
+	phy3: ethernet-phy@3 {
+		reg = <3>;
+		qca,phy-mode = "sgmii";
+	};
+
+	phy4: ethernet-phy@4 {
+		reg = <4>;
+		qca,phy-mode = "2500base-x"; /* 2.5G port */
+	};
+};
+
+&gmac1 {
+	status = "okay";
+	phy-mode = "sgmii";
+	phy-handle = <&phy0>;
+	qcom,id = <1>;
+	label = "lan1";
+};
+
+&gmac2 {
+	status = "okay";
+	phy-mode = "sgmii";
+	phy-handle = <&phy1>;
+	qcom,id = <2>;
+	label = "lan2";
+};
+
+&gmac3 {
+	status = "okay";
+	phy-mode = "sgmii";
+	phy-handle = <&phy2>;
+	qcom,id = <3>;
+	label = "lan3";
+};
+
+&gmac4 {
+	status = "okay";
+	phy-mode = "sgmii";
+	phy-handle = <&phy3>;
+	qcom,id = <4>;
+	label = "lan4";
+};
+
+&gmac5 {
+	status = "okay";
+	phy-mode = "2500base-x";
+	phy-handle = <&phy4>;
+	qcom,id = <5>;
+	label = "wan"; /* 2.5G port */
+};
+
+/* GPIO pin control */
+&tlmm {
+	pcie0_pins: pcie0-pins {
+		mux {
+			pins = "gpio38";
+			function = "pcie0";
+		};
+	};
+};
+
+/* LED indicators */
+&leds {
+	status = "okay";
+
+	led_blue: led-blue {
+		label = "ax6600:blue:status";
+		gpios = <&tlmm 15 GPIO_ACTIVE_HIGH>;
+		default-state = "on";
+	};
+
+	led_red: led-red {
+		label = "ax6600:red:status";
+		gpios = <&tlmm 16 GPIO_ACTIVE_HIGH>;
+	};
+
+	led_white: led-white {
+		label = "ax6600:white:status";
+		gpios = <&tlmm 17 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+/* Buttons */
+&gpio_keys {
+	status = "okay";
+
+	reset_button: reset {
+		label = "reset";
+		gpios = <&tlmm 56 GPIO_ACTIVE_LOW>;
+		linux,code = <KEY_RESTART>;
+		debounce-interval = <60>;
+		wakeup-source;
+	};
+
+	mesh_button: mesh {
+		label = "mesh";
+		gpios = <&tlmm 57 GPIO_ACTIVE_LOW>;
+		linux,code = <KEY_WPS_BUTTON>;
+		debounce-interval = <60>;
+	};
+};
+
+/* NSS (Network Security Subsystem) - hardware acceleration */
+&nss {
+	status = "okay";
+	/* Requires proprietary firmware */
+};

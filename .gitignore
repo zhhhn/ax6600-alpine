@@ -35,11 +35,15 @@ build/initramfs-minimal/
 
 # 脚本
 *.sh
+!build.sh
+!auto-dev.sh
 !scripts/*.sh
 
 # 设备树
 *.dts
 *.dtb
+!configs/*.dts
+!configs/*.dtb
 
 # 固件输出（用户自行构建）
 out/*.bin
