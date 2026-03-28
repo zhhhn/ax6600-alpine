@@ -1,0 +1,39 @@
+# Network interfaces configuration for JDCloud AX6600
+
+# Loopback
+auto lo
+iface lo inet loopback
+
+# WAN port (2.5G)
+auto eth0
+iface eth0 inet dhcp
+    pre-up /sbin/ip link set eth0 up
+    post-up /sbin/iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE 2>/dev/null || true
+
+# LAN bridge
+auto br-lan
+iface br-lan inet static
+    address 192.168.1.1
+    netmask 255.255.255.0
+    bridge_ports eth1 eth2 eth3 eth4
+    bridge_stp off
+    bridge_fd 0
+    bridge_maxwait 0
+    post-up /usr/sbin/dnsmasq -C /etc/dnsmasq.conf 2>/dev/null || true
+
+# Individual LAN ports (added to bridge)
+auto eth1
+iface eth1 inet manual
+    pre-up /sbin/ip link set eth1 up
+
+auto eth2
+iface eth2 inet manual
+    pre-up /sbin/ip link set eth2 up
+
+auto eth3
+iface eth3 inet manual
+    pre-up /sbin/ip link set eth3 up
+
+auto eth4
+iface eth4 inet manual
+    pre-up /sbin/ip link set eth4 up

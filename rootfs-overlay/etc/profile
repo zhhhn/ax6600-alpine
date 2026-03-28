@@ -1,0 +1,26 @@
+# /etc/profile: system-wide .profile file for the Bourne shell
+
+export PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
+export PS1='\h:\w\$ '
+export EDITOR=/bin/vi
+
+# Set terminal type
+[ -z "$TERM" ] && TERM=vt100
+
+# Aliases
+alias ls='ls --color=auto'
+alias ll='ls -la'
+alias l='ls -l'
+alias dir='ls -la'
+alias ..='cd ..'
+alias ...='cd ../..'
+
+# Functions
+h() {
+    history | tail -20
+}
+
+# Welcome message
+echo ""
+echo "Welcome to Alpine Linux on JDCloud AX6600!"
+echo ""

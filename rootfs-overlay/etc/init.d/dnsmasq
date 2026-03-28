@@ -1,0 +1,16 @@
+#!/sbin/openrc-run
+
+name="dnsmasq"
+command="/usr/sbin/dnsmasq"
+command_args="-C /etc/dnsmasq.conf"
+pidfile="/var/run/dnsmasq.pid"
+
+depend() {
+    need net
+    use logger
+}
+
+start_pre() {
+    mkdir -p /var/lib/misc
+    touch /var/lib/misc/dnsmasq.leases
+}
