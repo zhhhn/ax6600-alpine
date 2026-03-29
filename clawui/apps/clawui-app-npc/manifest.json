@@ -1,0 +1,11 @@
+{
+  "id": "clawui-app-npc",
+  "name": "NPC 客户端",
+  "version": "1.0.0",
+  "description": "NPS 内网穿透客户端 - Web 管理界面",
+  "icon": "network",
+  "category": "network",
+  "author": "ClawUI",
+  "permissions": ["network", "process"],
+  "dependencies": ["npc"]
+}

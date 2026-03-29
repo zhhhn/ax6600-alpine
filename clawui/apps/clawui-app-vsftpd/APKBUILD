@@ -1,0 +1,17 @@
+# ClawUI App: Vsftpd - APKBUILD
+pkgname=clawui-app-vsftpd
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management for Vsftpd FTP"
+arch="noarch"
+license="MIT"
+depends="clawui vsftpd"
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-vsftpd"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-vsftpd/"
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-vsftpd/api"
+    cp "$srcdir"/api/handler.sh "$pkgdir/usr/share/clawui/apps/clawui-app-vsftpd/api/"
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-vsftpd/api/handler.sh"
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-vsftpd/"
+}
+sha512sums=""

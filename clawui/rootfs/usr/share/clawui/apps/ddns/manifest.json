@@ -1,0 +1,21 @@
+{
+    "id": "ddns",
+    "name": "动态DNS",
+    "version": "1.0.0",
+    "description": "动态DNS服务，支持阿里云、腾讯云、Cloudflare等主流服务商",
+    "author": "ClawUI Team",
+    "icon": "cloud",
+    "category": "network",
+    "depends": ["curl", "ca-certificates"],
+    "provides": ["clawui-app-ddns"],
+    "api_version": 1,
+    "providers": [
+        {"id": "aliyun", "name": "阿里云DNS"},
+        {"id": "tencent", "name": "腾讯云DNS"},
+        {"id": "cloudflare", "name": "Cloudflare"},
+        {"id": "dnspod", "name": "DNSPod"},
+        {"id": "godaddy", "name": "GoDaddy"},
+        {"id": "noip", "name": "No-IP"},
+        {"id": "custom", "name": "自定义"}
+    ]
+}

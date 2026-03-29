@@ -1,0 +1,18 @@
+# ClawUI App: FRP - APKBUILD
+pkgname=clawui-app-frp
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management interface for FRP client"
+arch="noarch"
+license="MIT"
+depends="clawui frpc"
+
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-frp"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-frp/"
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-frp/api"
+    cp "$srcdir"/api/handler.sh "$pkgdir/usr/share/clawui/apps/clawui-app-frp/api/"
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-frp/api/handler.sh"
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-frp/"
+}
+sha512sums=""

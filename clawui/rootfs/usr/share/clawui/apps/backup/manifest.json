@@ -1,0 +1,12 @@
+{
+    "id": "backup",
+    "name": "备份恢复",
+    "version": "1.0.0",
+    "description": "系统配置备份和恢复，支持本地和远程备份",
+    "author": "ClawUI Team",
+    "icon": "database",
+    "category": "system",
+    "depends": [],
+    "provides": ["clawui-app-backup"],
+    "api_version": 1
+}

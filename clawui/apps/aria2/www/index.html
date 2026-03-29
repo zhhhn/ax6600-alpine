@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Aria2 Download</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .status { margin: 20px 0; padding: 15px; border-radius: 5px; }
+        .status.running { background: #d4edda; color: #155724; }
+        .status.stopped { background: #f8d7da; color: #721c24; }
+        .btn { padding: 10px 20px; margin: 5px; border: none; border-radius: 5px; cursor: pointer; }
+        .btn-start { background: #28a745; color: white; }
+        .btn-stop { background: #dc3545; color: white; }
+        .config { margin: 20px 0; }
+        .config label { display: block; margin: 10px 0 5px; }
+        .config input { padding: 8px; width: 300px; }
+        .tasks { margin: 20px 0; }
+        .task { padding: 10px; border: 1px solid #ddd; margin: 5px 0; border-radius: 5px; }
+        .task.active { background: #e7f3ff; }
+        .task.completed { background: #d4edda; }
+        pre { background: #f5f5f5; padding: 15px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>⚡ Aria2 Download Manager</h1>
+    <p>Lightweight multi-protocol download manager</p>
+    
+    <div id="status" class="status stopped">Loading...</div>
+    
+    <div>
+        <button class="btn btn-start" onclick="startService()">Start</button>
+        <button class="btn btn-stop" onclick="stopService()">Stop</button>
+        <button class="btn" onclick="refreshStatus()">Refresh</button>
+    </div>
+    
+    <div class="config">
+        <h3>Configuration</h3>
+        <label>RPC Port: <input type="number" id="rpc_port" value="6800"></label>
+        <label>Download Directory: <input type="text" id="download_dir" value="/var/lib/aria2/downloads"></label>
+        <label>Max Connections: <input type="number" id="max_connections" value="16"></label>
+        <label>RPC Secret: <input type="text" id="rpc_secret" placeholder="optional"></label>
+        <button class="btn" onclick="saveConfig()">Save Config</button>
+    </div>
+    
+    <div class="tasks">
+        <h3>Active Downloads</h3>
+        <div id="task-list">Loading tasks...</div>
+    </div>
+    
+    <div>
+        <h3>Add Download</h3>
+        <input type="text" id="download-url" placeholder="Enter URL (HTTP/HTTPS/FTP/Magnet)" style="width: 400px; padding: 8px;">
+        <button class="btn" onclick="addDownload()">Add</button>
+    </div>
+    
+    <div>
+        <h3>Usage</h3>
+        <p><strong>Supported Protocols:</strong> HTTP, HTTPS, FTP, SFTP, BitTorrent, Metalink</p>
+        <p><strong>Features:</strong></p>
+        <ul>
+            <li>Multi-connection downloads (up to 16 connections per file)</li>
+            <li>BitTorrent and Metalink support</li>
+            <li>JSON-RPC/XML-RPC interface</li>
+            <li>Lightweight and low resource usage</li>
+        </ul>
+        <p><strong>Example:</strong></p>
+        <pre>aria2c -x 16 -s 16 https://example.com/file.zip
+aria2c --bt-seed-untrue=true torrent.torrent</pre>
+    </div>
+    
+    <script>
+        async function refreshStatus() {
+            const res = await fetch('/api/clawui/apps/aria2/status');
+            const data = await res.json();
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = 'status ' + (data.running ? 'running' : 'stopped');
+            statusDiv.textContent = data.running ? '✓ Running on port ' + data.port : '✗ Stopped';
+            
+            if (data.config) {
+                document.getElementById('rpc_port').value = data.config.rpc_port || 6800;
+                document.getElementById('download_dir').value = data.config.download_dir || '/var/lib/aria2/downloads';
+                document.getElementById('max_connections').value = data.config.max_connections || 16;
+            }
+            
+            loadTasks();
+        }
+        
+        async function loadTasks() {
+            const res = await fetch('/api/clawui/apps/aria2/tasks');
+            const data = await res.json();
+            const taskList = document.getElementById('task-list');
+            
+            if (!data.tasks || data.tasks.length === 0) {
+                taskList.innerHTML = '<p>No active downloads</p>';
+                return;
+            }
+            
+            taskList.innerHTML = data.tasks.map(task => `
+                <div class="task ${task.status === 'active' ? 'active' : 'completed'}">
+                    <strong>${task.name}</strong><br>
+                    Progress: ${task.progress}% | 
+                    Speed: ${task.speed} | 
+                    Status: ${task.status}
+                </div>
+            `).join('');
+        }
+        
+        async function startService() {
+            await fetch('/api/clawui/apps/aria2/start', { method: 'POST' });
+            refreshStatus();
+        }
+        
+        async function stopService() {
+            await fetch('/api/clawui/apps/aria2/stop', { method: 'POST' });
+            refreshStatus();
+        }
+        
+        async function saveConfig() {
+            const config = {
+                rpc_port: document.getElementById('rpc_port').value,
+                download_dir: document.getElementById('download_dir').value,
+                max_connections: document.getElementById('max_connections').value,
+                rpc_secret: document.getElementById('rpc_secret').value
+            };
+            await fetch('/api/clawui/apps/aria2/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(config)
+            });
+            alert('Config saved! Restart service to apply changes.');
+        }
+        
+        async function addDownload() {
+            const url = document.getElementById('download-url').value;
+            if (!url) {
+                alert('Please enter a URL');
+                return;
+            }
+            
+            await fetch('/api/clawui/apps/aria2/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url })
+            });
+            
+            document.getElementById('download-url').value = '';
+            refreshStatus();
+        }
+        
+        refreshStatus();
+        setInterval(loadTasks, 5000);
+    </script>
+</body>
+</html>

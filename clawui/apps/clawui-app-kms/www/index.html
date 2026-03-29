@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KMS 管理器</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 900px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .header h1 { color: #333; }
+        .status-badge { padding: 8px 16px; border-radius: 20px; font-weight: bold; }
+        .status-running { background: #d4edda; color: #155724; }
+        .status-stopped { background: #f8d7da; color: #721c24; }
+        .card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .card h2 { margin-bottom: 15px; color: #333; font-size: 18px; }
+        .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-primary { background: #007bff; color: white; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; color: #555; font-weight: 500; }
+        .form-group input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+        .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px; }
+        .stat-card { background: #f8f9fa; padding: 15px; border-radius: 5px; text-align: center; }
+        .stat-value { font-size: 24px; font-weight: bold; color: #007bff; }
+        .stat-label { color: #666; font-size: 12px; margin-top: 5px; }
+        .help-box { background: #e7f3ff; padding: 15px; border-radius: 5px; margin-top: 15px; }
+        .help-box h3 { margin-bottom: 10px; color: #004085; }
+        .help-box code { background: white; padding: 2px 6px; border-radius: 3px; font-family: monospace; }
+        .log-area { background: #1e1e1e; color: #d4d4d4; padding: 15px; border-radius: 5px; font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚡ KMS 管理器</h1>
+            <span id="statusBadge" class="status-badge status-stopped">已停止</span>
+        </div>
+        
+        <div class="card">
+            <h2>服务控制</h2>
+            <button class="btn btn-success" onclick="control('start')">启动服务</button>
+            <button class="btn btn-danger" onclick="control('stop')">停止服务</button>
+            <button class="btn btn-primary" onclick="refreshStatus()">刷新状态</button>
+        </div>
+        
+        <div class="card">
+            <h2>配置</h2>
+            <div class="form-group">
+                <label>监听端口</label>
+                <input type="number" id="port" value="1688">
+            </div>
+            <button class="btn btn-success" onclick="saveConfig()">保存配置</button>
+        </div>
+        
+        <div class="card">
+            <h2>统计</h2>
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="statRequests">0</div>
+                    <div class="stat-label">激活请求</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="statSuccess">0</div>
+                    <div class="stat-label">成功激活</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>激活命令</h2>
+            <div class="help-box">
+                <h3>Windows 激活</h3>
+                <p><code>slmgr /skms &lt;路由器 IP&gt;:1688</code></p>
+                <p><code>slmgr /ato</code></p>
+            </div>
+            <div class="help-box" style="margin-top: 10px;">
+                <h3>Office 激活</h3>
+                <p><code>cd %ProgramFiles%\Microsoft Office\Office16</code></p>
+                <p><code>cscript ospp.vbs /sethst:&lt;路由器 IP&gt;</code></p>
+                <p><code>cscript ospp.vbs /act</code></p>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>日志</h2>
+            <button class="btn btn-primary" onclick="refreshLog()">刷新</button>
+            <div class="log-area" id="logArea">加载中...</div>
+        </div>
+    </div>
+    
+    <script>
+        async function api(action, data = null) {
+            const options = { method: data ? 'POST' : 'GET', headers: { 'Content-Type': 'application/json' } };
+            if (data) options.body = JSON.stringify(data);
+            const res = await fetch(`/api/clawui/apps/kms-manager/${action}`, options);
+            return res.json();
+        }
+        
+        async function refreshStatus() {
+            const data = await api('status');
+            const badge = document.getElementById('statusBadge');
+            badge.textContent = data.running ? '运行中' : '已停止';
+            badge.className = 'status-badge ' + (data.running ? 'status-running' : 'status-stopped');
+            if (data.config) {
+                document.getElementById('port').value = data.config.port || 1688;
+            }
+            if (data.stats) {
+                document.getElementById('statRequests').textContent = data.stats.requests || 0;
+                document.getElementById('statSuccess').textContent = data.stats.success || 0;
+            }
+        }
+        
+        async function control(action) {
+            await api(action, {}, 'POST');
+            setTimeout(refreshStatus, 1000);
+        }
+        
+        async function saveConfig() {
+            const config = { port: document.getElementById('port').value };
+            await api('config', config, 'POST');
+            alert('配置已保存，重启服务后生效');
+        }
+        
+        async function refreshLog() {
+            const data = await api('log');
+            document.getElementById('logArea').textContent = data.log || '暂无日志';
+        }
+        
+        refreshStatus();
+    </script>
+</body>
+</html>

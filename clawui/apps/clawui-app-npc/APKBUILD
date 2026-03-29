@@ -1,0 +1,27 @@
+# ClawUI App: NPC Client - APKBUILD
+# Web management interface for NPC (NPS Client)
+
+pkgname=clawui-app-npc
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management interface for NPC client"
+url="https://github.com/openclaw/clawui"
+arch="noarch"
+license="MIT"
+depends="clawui npc"
+options="!check"
+
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-npc"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-npc/"
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-npc/api"
+    cp "$srcdir"/api/handler.sh "$pkgdir/usr/share/clawui/apps/clawui-app-npc/api/"
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-npc/api/handler.sh"
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-npc/"
+    if [ -d "$srcdir/i18n" ]; then
+        mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-npc/i18n"
+        cp -r "$srcdir/i18n"/* "$pkgdir/usr/share/clawui/apps/clawui-app-npc/i18n/"
+    fi
+}
+
+sha512sums=""

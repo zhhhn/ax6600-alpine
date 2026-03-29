@@ -1,0 +1,17 @@
+# ClawUI App: Transmission - APKBUILD
+pkgname=clawui-app-transmission
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management for Transmission BT"
+arch="noarch"
+license="MIT"
+depends="clawui transmission"
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-transmission"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-transmission/"
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-transmission/api"
+    cp "$srcdir"/api/handler.sh "$pkgdir/usr/share/clawui/apps/clawui-app-transmission/api/"
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-transmission/api/handler.sh"
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-transmission/"
+}
+sha512sums=""

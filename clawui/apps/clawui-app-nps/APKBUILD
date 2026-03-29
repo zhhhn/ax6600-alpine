@@ -1,0 +1,27 @@
+# ClawUI App: NPS Server - APKBUILD
+# Web management interface for NPS (NAT Proxy Server)
+
+pkgname=clawui-app-nps
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management interface for NPS server"
+url="https://github.com/openclaw/clawui"
+arch="noarch"
+license="MIT"
+depends="clawui nps"
+options="!check"
+
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-nps"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-nps/"
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-nps/api"
+    cp "$srcdir"/api/handler.sh "$pkgdir/usr/share/clawui/apps/clawui-app-nps/api/"
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-nps/api/handler.sh"
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-nps/"
+    if [ -d "$srcdir/i18n" ]; then
+        mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-nps/i18n"
+        cp -r "$srcdir/i18n"/* "$pkgdir/usr/share/clawui/apps/clawui-app-nps/i18n/"
+    fi
+}
+
+sha512sums=""

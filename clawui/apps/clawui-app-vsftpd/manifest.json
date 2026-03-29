@@ -1,0 +1,11 @@
+{
+  "id": "clawui-app-vsftpd",
+  "name": "FTP 服务器",
+  "version": "1.0.0",
+  "description": "Vsftpd FTP 文件服务器 - Web 管理界面",
+  "icon": "folder",
+  "category": "storage",
+  "author": "ClawUI",
+  "permissions": ["network", "storage", "process"],
+  "dependencies": ["vsftpd"]
+}

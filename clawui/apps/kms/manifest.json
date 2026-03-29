@@ -1,0 +1,14 @@
+{
+  "id": "kms",
+  "name": "KMS Server",
+  "version": "1.0.0",
+  "description": "KMS activation server for Windows/Office",
+  "icon": "server",
+  "category": "tools",
+  "author": "ClawUI",
+  "permissions": ["network", "storage"],
+  "settings": {
+    "port": 1688,
+    "activation_interval": 259200
+  }
+}

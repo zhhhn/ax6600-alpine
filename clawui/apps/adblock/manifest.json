@@ -1,0 +1,12 @@
+{
+    "id": "adblock",
+    "name": "广告过滤",
+    "version": "1.0.0",
+    "description": "DNS广告过滤，支持多规则源和自定义规则",
+    "author": "ClawUI Team",
+    "icon": "ban",
+    "category": "network",
+    "depends": ["dnsmasq", "curl"],
+    "provides": ["clawui-app-adblock"],
+    "api_version": 1
+}

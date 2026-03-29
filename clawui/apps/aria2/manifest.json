@@ -1,0 +1,15 @@
+{
+  "id": "aria2",
+  "name": "Aria2 Download",
+  "version": "1.37.0",
+  "description": "Aria2 download manager with web UI",
+  "icon": "download",
+  "category": "tools",
+  "author": "ClawUI",
+  "permissions": ["network", "storage"],
+  "settings": {
+    "rpc_port": 6800,
+    "download_dir": "/var/lib/aria2/downloads",
+    "max_connections": 16
+  }
+}

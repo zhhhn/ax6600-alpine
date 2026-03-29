@@ -1,0 +1,11 @@
+{
+  "id": "clawui-app-adguard",
+  "name": "AdGuard Home",
+  "version": "1.0.0",
+  "description": "AdGuard Home 广告过滤 - Web 管理界面",
+  "icon": "shield",
+  "category": "network",
+  "author": "ClawUI",
+  "permissions": ["network", "process"],
+  "dependencies": ["adguardhome"]
+}

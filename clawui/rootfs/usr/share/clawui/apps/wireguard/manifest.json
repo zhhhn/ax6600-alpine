@@ -1,0 +1,12 @@
+{
+    "id": "wireguard",
+    "name": "WireGuard",
+    "version": "1.0.0",
+    "description": "WireGuard VPN 管理",
+    "author": "ClawUI Team",
+    "icon": "shield",
+    "category": "vpn",
+    "depends": ["wireguard-tools"],
+    "provides": ["clawui-app-wireguard"],
+    "api_version": 1
+}

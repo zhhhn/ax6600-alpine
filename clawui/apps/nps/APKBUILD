@@ -1,0 +1,44 @@
+# NPS Client Package for JDCloud AX6600
+# APKBUILD for nps-client
+
+pkgname=nps-client
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="NPS (NAT Proxy Socks) client for reverse proxy"
+url="https://github.com/openclaw/clawui"
+arch="aarch64"
+license="MIT"
+depends="clawui"
+options="!check"
+source=""
+
+package() {
+    # Create app directory
+    mkdir -p "$pkgdir/usr/share/clawui/apps/nps"
+    mkdir -p "$pkgdir/usr/share/nps"
+    mkdir -p "$pkgdir/etc/init.d"
+    mkdir -p "$pkgdir/etc/conf.d"
+    
+    # Copy app files
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/nps/" 2>/dev/null || true
+    cp -r "$srcdir"/api "$pkgdir/usr/share/clawui/apps/nps/" 2>/dev/null || true
+    cp -r "$srcdir"/i18n "$pkgdir/usr/share/clawui/apps/nps/" 2>/dev/null || true
+    
+    # Copy manifest
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/nps/" 2>/dev/null || true
+    
+    # Copy NPS binary (should be downloaded during build)
+    if [ -f "$srcdir/npc" ]; then
+        cp "$srcdir/npc" "$pkgdir/usr/share/nps/npc"
+        chmod +x "$pkgdir/usr/share/nps/npc"
+    fi
+    
+    # Install init script
+    cp "$srcdir/nps-client.init" "$pkgdir/etc/init.d/nps-client"
+    chmod +x "$pkgdir/etc/init.d/nps-client"
+    
+    # Install config
+    cp "$srcdir/nps-client.conf" "$pkgdir/etc/conf.d/nps-client"
+}
+
+sha512sums=""

@@ -1,0 +1,17 @@
+# ClawUI App: Samba - APKBUILD
+pkgname=clawui-app-samba
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management for Samba file sharing"
+arch="noarch"
+license="MIT"
+depends="clawui samba"
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-samba"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-samba/"
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-samba/api"
+    cp "$srcdir"/api/handler.sh "$pkgdir/usr/share/clawui/apps/clawui-app-samba/api/"
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-samba/api/handler.sh"
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-samba/"
+}
+sha512sums=""

@@ -1,56 +1,20 @@
-# 排除大文件和构建产物
-build/linux-6.6.22/
-build/alpine-rootfs/
-build/initramfs-minimal/
-*.tar.xz
-*.tar.gz
-*.bin
-*.itb
+# Build artifacts
+build/
+out/
+*.apk
 
-# 保留必要的配置文件
-!configs/
-!rootfs-overlay/
-!scripts/
+# Logs
+logs/
+*.log
 
-# 保留GitHub Actions工作流
-!.github/
-!.github/workflows/
-!.github/workflows/*.yml
-!.github/*.md
+# IDE
+.vscode/
+.idea/
 
-# 排除文档（但保留关键文档）
-*.md
-!README.md
-!INSTALL.md
-!MANIFEST.md
-!GITHUB_SETUP.md
-!PUSH_TO_GITHUB.md
-!PRODUCTION_BUILD.md
-!BUILD_STATUS.md
-!CHECKLIST.md
-!CRON.md
-!PROGRESS.md
-!PROJECT.md
-!READY.md
-!DEVELOPMENT.md
-!CHANGELOG.md
+# OS
+.DS_Store
+Thumbs.db
 
-# 脚本
-*.sh
-!build.sh
-!auto-dev.sh
-!scripts/*.sh
-!clawui/**/*.sh
-!rootfs-overlay/usr/share/clawui/api/*.sh
-
-# 设备树
-*.dts
-*.dtb
-!configs/*.dts
-!configs/*.dtb
-
-# 固件输出（用户自行构建）
-out/*.bin
-out/*.itb
-out/*.img
-out/*.gztest-env/
+# Temporary
+tmp/
+temp/

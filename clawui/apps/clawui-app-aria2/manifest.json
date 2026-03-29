@@ -1,0 +1,16 @@
+{
+  "id": "clawui-app-aria2",
+  "name": "Aria2",
+  "version": "1.0.0",
+  "description": "Aria2 下载管理器 - Web 管理界面",
+  "icon": "download",
+  "category": "tools",
+  "author": "ClawUI",
+  "permissions": ["network", "storage", "process"],
+  "dependencies": ["aria2"],
+  "settings": {
+    "rpc_port": 6800,
+    "download_dir": "/var/lib/aria2",
+    "max_connections": 16
+  }
+}

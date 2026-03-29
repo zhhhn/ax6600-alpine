@@ -1,0 +1,36 @@
+# ClawUI App: Aria2 - APKBUILD
+# Web management interface for aria2 download manager
+
+pkgname=clawui-app-aria2
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management interface for aria2 download manager"
+url="https://github.com/openclaw/clawui"
+arch="noarch"
+license="MIT"
+depends="clawui aria2 curl"
+options="!check"
+
+package() {
+    # Create app directory
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-aria2"
+    
+    # Copy web interface
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-aria2/"
+    
+    # Copy API handler
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-aria2/api"
+    cp "$srcdir"/api/handler.sh "$pkgdir/usr/share/clawui/apps/clawui-app-aria2/api/"
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-aria2/api/handler.sh"
+    
+    # Copy manifest
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-aria2/"
+    
+    # Copy i18n
+    if [ -d "$srcdir/i18n" ]; then
+        mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-aria2/i18n"
+        cp -r "$srcdir/i18n"/* "$pkgdir/usr/share/clawui/apps/clawui-app-aria2/i18n/"
+    fi
+}
+
+sha512sums=""

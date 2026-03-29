@@ -1,0 +1,26 @@
+# ClawUI PPPoE App
+pkgname=clawui-app-pppoe
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="ClawUI PPPoE 拨号配置应用"
+url="https://github.com/clawui/clawui-app-pppoe"
+arch="noarch"
+license="MIT"
+depends="clawui ppp rp-pppoe"
+makedepends=""
+source=""
+subpackages=""
+options="!check"
+
+package() {
+    mkdir -p "$pkgdir"/usr/share/clawui/apps/pppoe
+    mkdir -p "$pkgdir"/etc/ppp/peers
+    mkdir -p "$pkgdir"/etc/init.d
+    
+    cp -r "$srcdir"/www "$pkgdir"/usr/share/clawui/apps/pppoe/
+    cp -r "$srcdir"/api "$pkgdir"/usr/share/clawui/apps/pppoe/
+    cp "$srcdir"/manifest.json "$pkgdir"/usr/share/clawui/apps/pppoe/
+    
+    # Install init script
+    install -m755 "$srcdir"/pppoe.initd "$pkgdir"/etc/init.d/pppoe
+}

@@ -1,0 +1,11 @@
+{
+  "id": "clawui-app-nps",
+  "name": "NPS 服务端",
+  "version": "1.0.0",
+  "description": "NPS 内网穿透服务器 - Web 管理界面",
+  "icon": "server",
+  "category": "network",
+  "author": "ClawUI",
+  "permissions": ["network", "process"],
+  "dependencies": ["nps"]
+}

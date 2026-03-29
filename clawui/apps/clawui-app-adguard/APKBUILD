@@ -1,0 +1,17 @@
+# ClawUI App: AdGuard Home - APKBUILD
+pkgname=clawui-app-adguard
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management for AdGuard Home"
+arch="noarch"
+license="MIT"
+depends="clawui adguardhome"
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-adguard"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-adguard/"
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-adguard/api"
+    cp "$srcdir"/api/handler.sh "$pkgdir/usr/share/clawui/apps/clawui-app-adguard/api/"
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-adguard/api/handler.sh"
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-adguard/"
+}
+sha512sums=""

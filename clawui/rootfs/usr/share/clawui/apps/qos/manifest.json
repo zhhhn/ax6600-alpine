@@ -1,0 +1,12 @@
+{
+    "id": "qos",
+    "name": "QoS流量控制",
+    "version": "1.0.0",
+    "description": "流量整形和QoS控制，支持带宽限制和优先级队列",
+    "author": "ClawUI Team",
+    "icon": "tachometer-alt",
+    "category": "network",
+    "depends": ["iproute2", "tc"],
+    "provides": ["clawui-app-qos"],
+    "api_version": 1
+}

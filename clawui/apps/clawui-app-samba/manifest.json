@@ -1,0 +1,11 @@
+{
+  "id": "clawui-app-samba",
+  "name": "Samba 共享",
+  "version": "1.0.0",
+  "description": "Samba 文件共享服务 - Web 管理界面",
+  "icon": "network",
+  "category": "storage",
+  "author": "ClawUI",
+  "permissions": ["network", "storage", "process"],
+  "dependencies": ["samba"]
+}

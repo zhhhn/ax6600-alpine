@@ -1,0 +1,27 @@
+# ClawUI App: KMS - APKBUILD
+# Web management interface for KMS activation server
+
+pkgname=clawui-app-kms
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management interface for KMS activation server"
+url="https://github.com/openclaw/clawui"
+arch="noarch"
+license="MIT"
+depends="clawui py3-kms"
+options="!check"
+
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-kms"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-kms/"
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-kms/api"
+    cp "$srcdir"/api/handler.sh "$pkgdir/usr/share/clawui/apps/clawui-app-kms/api/"
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-kms/api/handler.sh"
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-kms/"
+    if [ -d "$srcdir/i18n" ]; then
+        mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-kms/i18n"
+        cp -r "$srcdir/i18n"/* "$pkgdir/usr/share/clawui/apps/clawui-app-kms/i18n/"
+    fi
+}
+
+sha512sums=""

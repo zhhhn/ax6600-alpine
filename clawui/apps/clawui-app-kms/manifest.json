@@ -1,0 +1,11 @@
+{
+  "id": "clawui-app-kms",
+  "name": "KMS 激活服务器",
+  "version": "1.0.0",
+  "description": "KMS 激活服务器 - Web 管理界面 (Windows/Office)",
+  "icon": "server",
+  "category": "tools",
+  "author": "ClawUI",
+  "permissions": ["network", "process"],
+  "dependencies": ["py3-kms"]
+}

@@ -1,0 +1,29 @@
+#!/sbin/openrc-run
+# NPS Client init script
+
+name="NPS Client"
+command="/usr/share/nps/npc"
+command_args="-config=/etc/nps/npc.conf"
+command_background="true"
+pidfile="/var/run/nps-client.pid"
+command_output="/var/log/nps-client.log"
+
+depend() {
+    need net
+    use logger
+}
+
+start_pre() {
+    checkpath -d /var/log -m 0755
+    checkpath -f /var/log/nps-client.log -m 0644
+    
+    if [ ! -f /etc/nps/npc.conf ]; then
+        echo "Configuration file /etc/nps/npc.conf not found"
+        return 1
+    fi
+    
+    if [ ! -x /usr/share/nps/npc ]; then
+        echo "NPS client binary not found. Please download it first."
+        return 1
+    fi
+}

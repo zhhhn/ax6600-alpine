@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>FRP 内网穿透</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .header h1 { color: #333; }
+        .status-badge { padding: 8px 16px; border-radius: 20px; font-weight: bold; }
+        .status-running { background: #d4edda; color: #155724; }
+        .status-stopped { background: #f8d7da; color: #721c24; }
+        .card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .card h2 { margin-bottom: 15px; color: #333; font-size: 18px; }
+        .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-primary { background: #007bff; color: white; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; color: #555; font-weight: 500; }
+        .form-group input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+        .proxy-list { list-style: none; }
+        .proxy-item { padding: 15px; border: 1px solid #eee; border-radius: 5px; margin-bottom: 10px; }
+        .log-area { background: #1e1e1e; color: #d4d4d4; padding: 15px; border-radius: 5px; font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔗 FRP 内网穿透</h1>
+            <span id="statusBadge" class="status-badge status-stopped">已停止</span>
+        </div>
+        
+        <div class="card">
+            <h2>服务控制</h2>
+            <button class="btn btn-success" onclick="control('start')">启动</button>
+            <button class="btn btn-danger" onclick="control('stop')">停止</button>
+            <button class="btn btn-primary" onclick="refreshStatus()">刷新</button>
+        </div>
+        
+        <div class="card">
+            <h2>服务器配置</h2>
+            <div class="form-group">
+                <label>FRP 服务器地址</label>
+                <input type="text" id="serverAddr" placeholder="frp.example.com">
+            </div>
+            <div class="form-group">
+                <label>服务器端口</label>
+                <input type="number" id="serverPort" value="7000">
+            </div>
+            <div class="form-group">
+                <label>Token (验证令牌)</label>
+                <input type="text" id="token" placeholder="可选">
+            </div>
+            <button class="btn btn-success" onclick="saveConfig()">保存配置</button>
+        </div>
+        
+        <div class="card">
+            <h2>代理列表</h2>
+            <button class="btn btn-primary" onclick="refreshProxies()">刷新</button>
+            <ul class="proxy-list" id="proxyList">
+                <li class="proxy-item">暂无代理</li>
+            </ul>
+        </div>
+        
+        <div class="card">
+            <h2>日志</h2>
+            <div class="log-area" id="logArea">加载中...</div>
+        </div>
+    </div>
+    
+    <script>
+        async function api(action, data = null) {
+            const options = { method: data ? 'POST' : 'GET', headers: { 'Content-Type': 'application/json' } };
+            if (data) options.body = JSON.stringify(data);
+            const res = await fetch(`/api/clawui/apps/clawui-app-frp/${action}`, options);
+            return res.json();
+        }
+        
+        async function refreshStatus() {
+            const data = await api('status');
+            const badge = document.getElementById('statusBadge');
+            badge.textContent = data.running ? '运行中' : '已停止';
+            badge.className = 'status-badge ' + (data.running ? 'status-running' : 'status-stopped');
+            if (data.config) {
+                document.getElementById('serverAddr').value = data.config.server_addr || '';
+                document.getElementById('serverPort').value = data.config.server_port || 7000;
+                document.getElementById('token').value = data.config.token || '';
+            }
+        }
+        
+        async function control(action) {
+            await api(action, {}, 'POST');
+            setTimeout(refreshStatus, 1000);
+        }
+        
+        async function saveConfig() {
+            const config = {
+                server_addr: document.getElementById('serverAddr').value,
+                server_port: document.getElementById('serverPort').value,
+                token: document.getElementById('token').value
+            };
+            await api('config', config, 'POST');
+            alert('配置已保存');
+        }
+        
+        async function refreshProxies() {
+            const data = await api('proxies');
+            const list = document.getElementById('proxyList');
+            list.innerHTML = (data.proxies || []).map(p => `
+                <li class="proxy-item">
+                    <strong>${p.name}</strong> - ${p.type} | 
+                    ${p.local_ip}:${p.local_port} → ${p.remote_port}
+                </li>
+            `).join('') || '<li class="proxy-item">暂无代理</li>';
+        }
+        
+        refreshStatus();
+    </script>
+</body>
+</html>

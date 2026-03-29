@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NPC 客户端</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .header h1 { color: #333; }
+        .status-badge { padding: 8px 16px; border-radius: 20px; font-weight: bold; }
+        .status-running { background: #d4edda; color: #155724; }
+        .status-stopped { background: #f8d7da; color: #721c24; }
+        .card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .card h2 { margin-bottom: 15px; color: #333; font-size: 18px; }
+        .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-warning { background: #ffc107; color: #333; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; color: #555; font-weight: 500; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+        .tunnel-list { list-style: none; }
+        .tunnel-item { padding: 15px; border: 1px solid #eee; border-radius: 5px; margin-bottom: 10px; }
+        .tunnel-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .tunnel-type { padding: 4px 8px; border-radius: 3px; font-size: 12px; background: #007bff; color: white; }
+        .tunnel-status { padding: 4px 8px; border-radius: 3px; font-size: 12px; }
+        .tunnel-ok { background: #d4edda; color: #155724; }
+        .tunnel-fail { background: #f8d7da; color: #721c24; }
+        .log-area { background: #1e1e1e; color: #d4d4d4; padding: 15px; border-radius: 5px; font-family: monospace; font-size: 12px; max-height: 300px; overflow-y: auto; }
+        .help-box { background: #e7f3ff; padding: 15px; border-radius: 5px; margin-top: 15px; }
+        .help-box h3 { margin-bottom: 10px; color: #004085; font-size: 14px; }
+        .help-box p { font-size: 13px; color: #004085; }
+        .help-box code { background: white; padding: 2px 6px; border-radius: 3px; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌐 NPC 客户端</h1>
+            <span id="statusBadge" class="status-badge status-stopped">已停止</span>
+        </div>
+        
+        <div class="card">
+            <h2>服务控制</h2>
+            <button class="btn btn-success" onclick="control('start')">启动</button>
+            <button class="btn btn-warning" onclick="control('restart')">重启</button>
+            <button class="btn btn-danger" onclick="control('stop')">停止</button>
+            <button class="btn btn-primary" onclick="refreshStatus()">刷新</button>
+        </div>
+        
+        <div class="card">
+            <h2>服务器配置</h2>
+            <div class="form-group">
+                <label>NPS 服务器地址</label>
+                <input type="text" id="serverAddr" placeholder="nps.example.com 或 公网 IP">
+            </div>
+            <div class="form-group">
+                <label>服务器端口</label>
+                <input type="number" id="serverPort" value="8024">
+            </div>
+            <div class="form-group">
+                <label>验证密钥 (vkey)</label>
+                <input type="text" id="vkey" placeholder="从 NPS 服务端获取">
+            </div>
+            <div class="form-group">
+                <label>连接类型</label>
+                <select id="connType">
+                    <option value="tcp">TCP</option>
+                    <option value="kcp">KCP (更快)</option>
+                    <option value="quic">QUIC</option>
+                </select>
+            </div>
+            <button class="btn btn-success" onclick="saveConfig()">保存配置</button>
+        </div>
+        
+        <div class="card">
+            <h2>隧道列表</h2>
+            <button class="btn btn-primary" onclick="refreshTunnels()">刷新</button>
+            <ul class="tunnel-list" id="tunnelList">
+                <li class="tunnel-item">暂无隧道</li>
+            </ul>
+        </div>
+        
+        <div class="card">
+            <h2>帮助信息</h2>
+            <div class="help-box">
+                <h3>📌 NPC 客户端说明</h3>
+                <p><strong>NPC (NPS Client)</strong> 是 NPS 内网穿透的客户端，用于连接到 NPS 服务器。</p>
+                <p style="margin-top: 10px;"><strong>使用步骤：</strong></p>
+                <ol style="margin-left: 20px; margin-top: 5px;">
+                    <li>在 NPS 服务端创建客户端，获取验证密钥 (vkey)</li>
+                    <li>在上方填写服务器地址、端口和 vkey</li>
+                    <li>保存配置并启动服务</li>
+                    <li>在 NPS 服务端配置隧道（TCP/UDP/HTTP/HTTPS）</li>
+                </ol>
+                <p style="margin-top: 10px;"><strong>隧道类型说明：</strong></p>
+                <ul style="margin-left: 20px; margin-top: 5px;">
+                    <li><strong>TCP 隧道：</strong> 适用于 SSH、远程桌面等 TCP 服务</li>
+                    <li><strong>UDP 隧道：</strong> 适用于 DNS、游戏等 UDP 服务</li>
+                    <li><strong>HTTP 隧道：</strong> 适用于网站</li>
+                    <li><strong>HTTPS 隧道：</strong> 适用于加密网站</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>日志</h2>
+            <button class="btn btn-primary" onclick="refreshLog()">刷新</button>
+            <div class="log-area" id="logArea">加载中...</div>
+        </div>
+    </div>
+    
+    <script>
+        async function api(action, data = null) {
+            const options = { method: data ? 'POST' : 'GET', headers: { 'Content-Type': 'application/json' } };
+            if (data) options.body = JSON.stringify(data);
+            const res = await fetch(`/api/clawui/apps/clawui-app-npc/${action}`, options);
+            return res.json();
+        }
+        
+        async function refreshStatus() {
+            const data = await api('status');
+            const badge = document.getElementById('statusBadge');
+            badge.textContent = data.running ? '运行中' : '已停止';
+            badge.className = 'status-badge ' + (data.running ? 'status-running' : 'status-stopped');
+            
+            if (data.config) {
+                document.getElementById('serverAddr').value = data.config.server_addr || '';
+                document.getElementById('serverPort').value = data.config.server_port || 8024;
+                document.getElementById('vkey').value = data.config.vkey || '';
+                document.getElementById('connType').value = data.config.conn_type || 'tcp';
+            }
+        }
+        
+        async function control(action) {
+            await api(action, {}, 'POST');
+            setTimeout(refreshStatus, 1000);
+        }
+        
+        async function saveConfig() {
+            const config = {
+                server_addr: document.getElementById('serverAddr').value,
+                server_port: document.getElementById('serverPort').value,
+                vkey: document.getElementById('vkey').value,
+                conn_type: document.getElementById('connType').value
+            };
+            await api('config', config, 'POST');
+            alert('配置已保存，重启服务后生效');
+        }
+        
+        async function refreshTunnels() {
+            const data = await api('tunnels');
+            const list = document.getElementById('tunnelList');
+            if (!data.tunnels || data.tunnels.length === 0) {
+                list.innerHTML = '<li class="tunnel-item">暂无隧道</li>';
+                return;
+            }
+            list.innerHTML = data.tunnels.map(t => `
+                <li class="tunnel-item">
+                    <div class="tunnel-header">
+                        <span><span class="tunnel-type">${t.type || 'TCP'}</span> ${t.remark || t.alias || '隧道'}</span>
+                        <span class="tunnel-status ${t.status ? 'tunnel-ok' : 'tunnel-fail'}">
+                            ${t.status ? '✓ 正常' : '✗ 失败'}
+                        </span>
+                    </div>
+                    <div style="font-size: 13px; color: #666;">
+                        ${t.local_ip || '127.0.0.1'}:${t.local_port} → ${t.server_ip}:${t.server_port}
+                    </div>
+                </li>
+            `).join('');
+        }
+        
+        async function refreshLog() {
+            const data = await api('log');
+            document.getElementById('logArea').textContent = data.log || '暂无日志';
+        }
+        
+        refreshStatus();
+    </script>
+</body>
+</html>
