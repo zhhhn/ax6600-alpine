@@ -1,5 +1,5 @@
 # ClawUI App: Diag - APKBUILD
-pkgname=clawui-app-diag
+pkgname=diag
 pkgver=1.0.0
 pkgrel=0
 pkgdesc="ClawUI web management for network diagnostics"

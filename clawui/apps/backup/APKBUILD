@@ -1,5 +1,5 @@
 # ClawUI App: Backup - APKBUILD
-pkgname=clawui-app-backup
+pkgname=backup
 pkgver=1.0.0
 pkgrel=0
 pkgdesc="ClawUI web management for backup and restore"

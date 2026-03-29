@@ -1,5 +1,5 @@
 {
-    "id": "clawui-app-diag",
+    "id": "diag",
     "name": "网络诊断",
     "version": "1.0.0",
     "description": "网络诊断工具，包含Ping、Traceroute、DNS测试、端口扫描等",

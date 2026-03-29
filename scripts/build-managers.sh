@@ -77,6 +77,20 @@ build_all() {
     info "Building all ClawUI app APKs..."
     mkdir -p "${OUTPUT_DIR}"
     
+    # 核心功能（固件内置，直接用功能名）
+    local core_apps=(
+        "backup"
+        "ddns"
+        "diag"
+        "multiwan"
+        "portforward"
+        "pppoe"
+        "qos"
+        "routes"
+        "traffic"
+    )
+    
+    # 可选应用（需安装，用 clawui-app- 前缀）
     local apps=(
         "clawui-app-aria2"
         "clawui-app-nps"
@@ -92,7 +106,6 @@ build_all() {
         "clawui-app-openvpn"
         "clawui-app-wol"
         "clawui-app-docker"
-        "clawui-app-ddns"
         "clawui-app-mosquitto"
         "clawui-app-speedtest"
         "clawui-app-shadowsocks"
@@ -109,16 +122,18 @@ build_all() {
         "clawui-app-photoprism"
         "clawui-app-ttrss"
         "clawui-app-nginx"
-        "clawui-app-backup"
-        "clawui-app-diag"
-        "clawui-app-multiwan"
-        "clawui-app-portforward"
-        "clawui-app-pppoe"
-        "clawui-app-qos"
-        "clawui-app-routes"
-        "clawui-app-traffic"
     )
     
+    info ""
+    info "Building core apps (firmware built-in)..."
+    for app in "${core_apps[@]}"; do
+        if [ -d "${APPS_DIR}/${app}" ]; then
+            build_app "$app" || true
+        fi
+    done
+    
+    info ""
+    info "Building optional apps (clawui-app-*)..."
     for app in "${apps[@]}"; do
         if [ -d "${APPS_DIR}/${app}" ]; then
             build_app "$app" || true

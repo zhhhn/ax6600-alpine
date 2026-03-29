@@ -1,5 +1,5 @@
 {
-  "id": "clawui-app-ddns",
+  "id": "ddns",
   "name": "DDNS",
   "version": "1.0.0",
   "description": "动态 DNS 客户端 - 自动更新域名解析",

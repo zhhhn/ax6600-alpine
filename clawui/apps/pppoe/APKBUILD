@@ -1,5 +1,5 @@
 # ClawUI App: PPPoE - APKBUILD
-pkgname=clawui-app-pppoe
+pkgname=pppoe
 pkgver=1.0.0
 pkgrel=0
 pkgdesc="ClawUI web management for PPPoE connection"

@@ -1,5 +1,5 @@
 # ClawUI App: Port Forward - APKBUILD
-pkgname=clawui-app-portforward
+pkgname=portforward
 pkgver=1.0.0
 pkgrel=0
 pkgdesc="ClawUI web management for port forwarding"

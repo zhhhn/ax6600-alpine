@@ -1,5 +1,5 @@
 # ClawUI App: QoS - APKBUILD
-pkgname=clawui-app-qos
+pkgname=qos
 pkgver=1.0.0
 pkgrel=0
 pkgdesc="ClawUI web management for QoS traffic control"

@@ -1,5 +1,5 @@
 # ClawUI App: Routes - APKBUILD
-pkgname=clawui-app-routes
+pkgname=routes
 pkgver=1.0.0
 pkgrel=0
 pkgdesc="ClawUI web management for static routes"

@@ -1,5 +1,5 @@
 {
-    "id": "clawui-app-routes",
+    "id": "routes",
     "name": "静态路由",
     "version": "1.0.0",
     "description": "静态路由表管理，支持策略路由和多路由表",

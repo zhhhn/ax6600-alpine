@@ -1,5 +1,5 @@
 # ClawUI App: MultiWAN - APKBUILD
-pkgname=clawui-app-multiwan
+pkgname=multiwan
 pkgver=1.0.0
 pkgrel=0
 pkgdesc="ClawUI web management for multi-WAN load balancing"

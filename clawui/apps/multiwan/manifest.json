@@ -1,5 +1,5 @@
 {
-    "id": "clawui-app-multiwan",
+    "id": "multiwan",
     "name": "多线负载均衡",
     "version": "1.0.0",
     "description": "多WAN口负载均衡和故障切换，支持权重分配和健康检查",

@@ -1,5 +1,5 @@
 {
-    "id": "clawui-app-portforward",
+    "id": "portforward",
     "name": "端口转发",
     "version": "1.0.0",
     "description": "端口转发/端口映射配置，支持 UPnP 和 DMZ",

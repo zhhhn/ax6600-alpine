@@ -1,5 +1,5 @@
 # ClawUI App: Traffic - APKBUILD
-pkgname=clawui-app-traffic
+pkgname=traffic
 pkgver=1.0.0
 pkgrel=0
 pkgdesc="ClawUI web management for traffic monitoring"
