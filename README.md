@@ -235,19 +235,53 @@ POST /api/system/reboot   # 重启
 
 ### 可选应用 (clawui-app-*)
 
+已开发 9 个 Web 管理应用，每个应用提供完整的 Web 界面：
+
+| 应用 | 包名 | 功能 | 依赖 |
+|------|------|------|------|
+| **Aria2** | `clawui-app-aria2` | BT/HTTP 下载管理 | aria2, curl |
+| **NPS 服务端** | `clawui-app-nps` | 内网穿透服务器 | nps |
+| **NPC 客户端** | `clawui-app-npc` | 内网穿透客户端 | npc |
+| **KMS** | `clawui-app-kms` | Windows/Office 激活 | py3-kms |
+| **FRP** | `clawui-app-frp` | FRP 穿透客户端 | frpc |
+| **Transmission** | `clawui-app-transmission` | BT 下载 | transmission |
+| **AdGuard Home** | `clawui-app-adguard` | DNS 广告过滤 | adguardhome |
+| **FTP** | `clawui-app-vsftpd` | FTP 文件服务 | vsftpd |
+| **Samba** | `clawui-app-samba` | 文件共享 | samba |
+
+### 安装示例
+
 ```bash
-# WireGuard VPN
-apk add wireguard-tools
-apk add clawui-app-wireguard
+# 1. 安装服务 (从 Alpine 官方源)
+apk add aria2
 
-# OpenVPN
-apk add openvpn
-apk add clawui-app-openvpn
+# 2. 安装 Web 管理界面
+apk add --allow-untrusted clawui-app-aria2-1.0.0-r0_noarch.apk
 
-# BT 下载
-apk add transmission-daemon
-apk add clawui-app-transmission
+# 3. 启动服务
+/etc/init.d/aria2 start
+rc-update add aria2 default
+
+# 4. Web 访问
+http://192.168.1.1/app/clawui-app-aria2
 ```
+
+### 应用构建
+
+```bash
+cd clawui/apps
+
+# 构建所有应用
+../scripts/build-managers.sh all
+
+# 构建单个应用
+../scripts/build-managers.sh build clawui-app-aria2
+
+# 输出目录
+ls ../out/packages/
+```
+
+📚 **详细文档**: [clawui-apps/README.md](clawui-apps/README.md)
 
 ---
 
