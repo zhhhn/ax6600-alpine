@@ -1,0 +1,70 @@
+#!/sbin/openrc-run
+# ClawUI Init Script
+
+name="clawui"
+description="Alpine Router Web Interface"
+
+command="/usr/sbin/clawui"
+command_args="start"
+command_background="yes"
+pidfile="/var/run/clawui.pid"
+
+depend() {
+    need net
+    after firewall
+}
+
+start_pre() {
+    # Create required directories
+    mkdir -p /var/log/clawui
+    mkdir -p /var/run
+    
+    # Set default config
+    if [ ! -f /etc/clawui/config ]; then
+        cat > /etc/clawui/config << EOF
+PORT=80
+THEME=bootstrap
+LANG=zh-cn
+EOF
+    fi
+}
+
+start() {
+    ebegin "Starting ClawUI"
+    
+    # Load config
+    . /etc/clawui/config 2>/dev/null || true
+    PORT="${PORT:-80}"
+    
+    # Start httpd
+    httpd -p "$PORT" \
+          -h /usr/share/clawui/www \
+          -c /etc/clawui/httpd.conf
+    
+    echo $! > "$pidfile"
+    
+    eend $?
+}
+
+stop() {
+    ebegin "Stopping ClawUI"
+    
+    if [ -f "$pidfile" ]; then
+        kill $(cat "$pidfile") 2>/dev/null
+        rm -f "$pidfile"
+    fi
+    
+    killall httpd 2>/dev/null || true
+    
+    eend $?
+}
+
+status() {
+    if [ -f "$pidfile" ] && kill -0 $(cat "$pidfile") 2>/dev/null; then
+        echo "ClawUI is running"
+        return 0
+    else
+        echo "ClawUI is not running"
+        return 1
+    fi
+}

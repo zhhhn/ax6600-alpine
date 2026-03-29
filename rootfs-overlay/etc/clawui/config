@@ -1,0 +1,16 @@
+# ClawUI Configuration
+
+# HTTP port
+PORT=80
+
+# Theme (bootstrap, material)
+THEME=bootstrap
+
+# Language (zh-cn, en)
+LANG=zh-cn
+
+# Session timeout (minutes)
+SESSION_TIMEOUT=30
+
+# Enable authentication
+AUTH_ENABLED=true

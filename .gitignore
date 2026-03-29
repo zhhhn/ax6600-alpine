@@ -41,6 +41,7 @@ build/initramfs-minimal/
 !auto-dev.sh
 !scripts/*.sh
 !clawui/**/*.sh
+!rootfs-overlay/usr/share/clawui/api/*.sh
 
 # 设备树
 *.dts

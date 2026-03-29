@@ -125,6 +125,10 @@ alpine-devel@lists.alpinelinux.org-6165ee59.rsa.pub"
     mkdir -p "${ROOTFS_DIR}/var/run" "${ROOTFS_DIR}/run" 2>/dev/null || true
     ln -sf /run "${ROOTFS_DIR}/var/run" 2>/dev/null || true
     
+    # Create ClawUI directories
+    mkdir -p "${ROOTFS_DIR}/usr/share/clawui/api" 2>/dev/null || true
+    mkdir -p "${ROOTFS_DIR}/var/log/clawui" 2>/dev/null || true
+    
     # Verify base packages were installed
     if [ ! -f "${ROOTFS_DIR}/bin/busybox" ]; then
         error "Base packages were not installed correctly"

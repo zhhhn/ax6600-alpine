@@ -3,185 +3,273 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AX6600 管理面板</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: #1a1a2e; color: #eee; min-height: 100vh;
-        }
-        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-        header { 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 20px; margin-bottom: 20px; border-radius: 10px;
-        }
-        header h1 { font-size: 24px; margin-bottom: 5px; }
-        header p { opacity: 0.8; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-        .card { 
-            background: #16213e; border-radius: 10px; padding: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-        }
-        .card h2 { 
-            font-size: 16px; color: #667eea; margin-bottom: 15px;
-            border-bottom: 1px solid #333; padding-bottom: 10px;
-        }
-        .stat { display: flex; justify-content: space-between; margin: 10px 0; }
-        .stat-label { color: #888; }
-        .stat-value { font-weight: bold; }
-        .progress { 
-            background: #333; border-radius: 5px; height: 8px; 
-            overflow: hidden; margin-top: 5px;
-        }
-        .progress-bar { 
-            height: 100%; background: linear-gradient(90deg, #667eea, #764ba2);
-            transition: width 0.3s;
-        }
-        .btn { 
-            background: #667eea; border: none; color: white; padding: 10px 20px;
-            border-radius: 5px; cursor: pointer; margin: 5px;
-        }
-        .btn:hover { opacity: 0.9; }
-        .btn-danger { background: #e74c3c; }
-        .btn-success { background: #27ae60; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #333; }
-        th { color: #667eea; }
-        .nav { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-        .nav a { 
-            color: #667eea; text-decoration: none; padding: 10px 15px;
-            background: #16213e; border-radius: 5px;
-        }
-        .nav a:hover, .nav a.active { background: #667eea; color: white; }
-        .refresh { float: right; color: #667eea; cursor: pointer; }
-    </style>
+    <title>ClawUI - AX6600 管理面板</title>
+    <link rel="stylesheet" href="/css/clawui.css">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>⚡ JDCloud AX6600</h1>
-            <p>Alpine Linux 管理面板</p>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-brand">
+                <h1>⚡ ClawUI</h1>
+                <span class="version">v1.0</span>
+            </div>
+            <nav class="nav">
+                <a href="#status" class="nav-item active" data-page="status">状态</a>
+                <a href="#network" class="nav-item" data-page="network">网络</a>
+                <a href="#wireless" class="nav-item" data-page="wireless">无线</a>
+                <a href="#firewall" class="nav-item" data-page="firewall">防火墙</a>
+                <a href="#packages" class="nav-item" data-page="packages">软件包</a>
+                <a href="#system" class="nav-item" data-page="system">系统</a>
+            </nav>
+            <div class="header-actions">
+                <span id="hostname">ax6600</span>
+                <button class="btn-logout" onclick="logout()">退出</button>
+            </div>
         </header>
-        
-        <nav class="nav">
-            <a href="/" class="active">状态</a>
-            <a href="/cgi-bin/network.cgi">网络</a>
-            <a href="/cgi-bin/wifi.cgi">WiFi</a>
-            <a href="/cgi-bin/firewall.cgi">防火墙</a>
-            <a href="/cgi-bin/system.cgi">系统</a>
-        </nav>
-        
-        <div class="grid">
-            <div class="card">
-                <h2>📊 系统状态</h2>
-                <span class="refresh" onclick="location.reload()">🔄 刷新</span>
-                <div class="stat">
-                    <span class="stat-label">运行时间</span>
-                    <span class="stat-value" id="uptime">加载中...</span>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Status Page -->
+            <section id="page-status" class="page active">
+                <h2>系统状态</h2>
+                <div class="cards">
+                    <div class="card">
+                        <h3>系统信息</h3>
+                        <div class="info-row"><span>主机名</span><span id="info-hostname">-</span></div>
+                        <div class="info-row"><span>运行时间</span><span id="info-uptime">-</span></div>
+                        <div class="info-row"><span>内核版本</span><span id="info-kernel">-</span></div>
+                        <div class="info-row"><span>Alpine 版本</span><span id="info-alpine">-</span></div>
+                    </div>
+                    <div class="card">
+                        <h3>资源使用</h3>
+                        <div class="info-row"><span>CPU</span><span id="info-cpu">-</span></div>
+                        <div class="progress-bar"><div id="cpu-bar" class="progress-fill"></div></div>
+                        <div class="info-row"><span>内存</span><span id="info-memory">-</span></div>
+                        <div class="progress-bar"><div id="memory-bar" class="progress-fill"></div></div>
+                    </div>
+                    <div class="card">
+                        <h3>网络流量</h3>
+                        <div class="info-row"><span>下载</span><span id="info-download">-</span></div>
+                        <div class="info-row"><span>上传</span><span id="info-upload">-</span></div>
+                        <div class="info-row"><span>客户端</span><span id="info-clients">-</span></div>
+                    </div>
                 </div>
-                <div class="stat">
-                    <span class="stat-label">CPU 使用率</span>
-                    <span class="stat-value" id="cpu">--</span>
+            </section>
+
+            <!-- Network Page -->
+            <section id="page-network" class="page">
+                <h2>网络设置</h2>
+                <div class="cards">
+                    <div class="card">
+                        <h3>LAN 设置</h3>
+                        <form id="form-lan">
+                            <div class="form-group">
+                                <label>IP 地址</label>
+                                <input type="text" id="lan-ip" name="lan_ip" value="192.168.1.1">
+                            </div>
+                            <div class="form-group">
+                                <label>子网掩码</label>
+                                <input type="text" value="255.255.255.0" disabled>
+                            </div>
+                            <button type="submit" class="btn-primary">保存</button>
+                        </form>
+                    </div>
+                    <div class="card">
+                        <h3>WAN 设置</h3>
+                        <form id="form-wan">
+                            <div class="form-group">
+                                <label>连接类型</label>
+                                <select id="wan-proto">
+                                    <option value="dhcp">DHCP (自动)</option>
+                                    <option value="static">静态 IP</option>
+                                    <option value="pppoe">PPPoE</option>
+                                </select>
+                            </div>
+                            <div id="pppoe-fields" style="display:none">
+                                <div class="form-group">
+                                    <label>用户名</label>
+                                    <input type="text" id="pppoe-user">
+                                </div>
+                                <div class="form-group">
+                                    <label>密码</label>
+                                    <input type="password" id="pppoe-pass">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>当前 IP</label>
+                                <input type="text" id="wan-ip" disabled>
+                            </div>
+                            <button type="submit" class="btn-primary">保存</button>
+                        </form>
+                    </div>
+                    <div class="card">
+                        <h3>接口状态</h3>
+                        <table class="table">
+                            <thead><tr><th>接口</th><th>类型</th><th>状态</th></tr></thead>
+                            <tbody id="interfaces-list"></tbody>
+                        </table>
+                    </div>
                 </div>
-                <div class="progress"><div class="progress-bar" id="cpu-bar" style="width: 0%"></div></div>
-                <div class="stat">
-                    <span class="stat-label">内存使用</span>
-                    <span class="stat-value" id="memory">--</span>
+            </section>
+
+            <!-- Wireless Page -->
+            <section id="page-wireless" class="page">
+                <h2>无线设置</h2>
+                <div class="cards">
+                    <div class="card">
+                        <h3>2.4GHz 设置</h3>
+                        <form id="form-wifi-2g">
+                            <div class="form-group">
+                                <label>SSID</label>
+                                <input type="text" id="ssid-2g" name="ssid">
+                            </div>
+                            <div class="form-group">
+                                <label>密码</label>
+                                <input type="password" id="password-2g" name="password">
+                            </div>
+                            <div class="form-group">
+                                <label>信道</label>
+                                <select id="channel-2g">
+                                    <option value="auto">自动</option>
+                                    <option value="1">1</option>
+                                    <option value="6">6</option>
+                                    <option value="11">11</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn-primary">保存</button>
+                            <button type="button" class="btn-secondary" onclick="toggleWifi('2g')">开关</button>
+                        </form>
+                    </div>
+                    <div class="card">
+                        <h3>5GHz 设置</h3>
+                        <form id="form-wifi-5g">
+                            <div class="form-group">
+                                <label>SSID</label>
+                                <input type="text" id="ssid-5g" name="ssid">
+                            </div>
+                            <div class="form-group">
+                                <label>密码</label>
+                                <input type="password" id="password-5g" name="password">
+                            </div>
+                            <div class="form-group">
+                                <label>信道</label>
+                                <select id="channel-5g">
+                                    <option value="auto">自动</option>
+                                    <option value="36">36</option>
+                                    <option value="44">44</option>
+                                    <option value="149">149</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn-primary">保存</button>
+                            <button type="button" class="btn-secondary" onclick="toggleWifi('5g')">开关</button>
+                        </form>
+                    </div>
+                    <div class="card">
+                        <h3>无线状态</h3>
+                        <table class="table">
+                            <thead><tr><th>频段</th><th>状态</th><th>客户端</th></tr></thead>
+                            <tbody id="wifi-status"></tbody>
+                        </table>
+                    </div>
                 </div>
-                <div class="progress"><div class="progress-bar" id="memory-bar" style="width: 0%"></div></div>
-            </div>
-            
-            <div class="card">
-                <h2>🌐 网络状态</h2>
-                <div class="stat">
-                    <span class="stat-label">WAN IP</span>
-                    <span class="stat-value" id="wan-ip">--</span>
+            </section>
+
+            <!-- Firewall Page -->
+            <section id="page-firewall" class="page">
+                <h2>防火墙</h2>
+                <div class="cards">
+                    <div class="card">
+                        <h3>端口转发</h3>
+                        <button class="btn-primary" onclick="showAddPortForward()">添加规则</button>
+                        <table class="table">
+                            <thead><tr><th>协议</th><th>外部端口</th><th>内部 IP</th><th>内部端口</th><th>操作</th></tr></thead>
+                            <tbody id="port-forwards"></tbody>
+                        </table>
+                    </div>
+                    <div class="card">
+                        <h3>防火墙状态</h3>
+                        <div class="info-row"><span>状态</span><span id="firewall-status">-</span></div>
+                        <div class="info-row"><span>规则数量</span><span id="firewall-rules">-</span></div>
+                        <button class="btn-secondary" onclick="reloadFirewall()">重新加载</button>
+                    </div>
                 </div>
-                <div class="stat">
-                    <span class="stat-label">LAN IP</span>
-                    <span class="stat-value">192.168.1.1</span>
+            </section>
+
+            <!-- Packages Page -->
+            <section id="page-packages" class="page">
+                <h2>软件包</h2>
+                <div class="cards">
+                    <div class="card full-width">
+                        <h3>软件包管理</h3>
+                        <div class="toolbar">
+                            <button class="btn-secondary" onclick="updateRepos()">更新列表</button>
+                            <button class="btn-secondary" onclick="upgradeAll()">升级全部</button>
+                            <input type="text" id="search-pkg" placeholder="搜索软件包...">
+                        </div>
+                        <table class="table">
+                            <thead><tr><th>名称</th><th>版本</th><th>描述</th><th>操作</th></tr></thead>
+                            <tbody id="packages-list"></tbody>
+                        </table>
+                    </div>
                 </div>
-                <div class="stat">
-                    <span class="stat-label">下载</span>
-                    <span class="stat-value" id="download">-- MB/s</span>
+            </section>
+
+            <!-- System Page -->
+            <section id="page-system" class="page">
+                <h2>系统设置</h2>
+                <div class="cards">
+                    <div class="card">
+                        <h3>基本设置</h3>
+                        <form id="form-system">
+                            <div class="form-group">
+                                <label>主机名</label>
+                                <input type="text" id="system-hostname">
+                            </div>
+                            <div class="form-group">
+                                <label>时区</label>
+                                <select id="system-timezone">
+                                    <option value="Asia/Shanghai">Asia/Shanghai</option>
+                                    <option value="UTC">UTC</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn-primary">保存</button>
+                        </form>
+                    </div>
+                    <div class="card">
+                        <h3>管理操作</h3>
+                        <button class="btn-secondary" onclick="backupConfig()">备份配置</button>
+                        <button class="btn-warning" onclick="reboot()">重启系统</button>
+                        <button class="btn-danger" onclick="factoryReset()">恢复出厂</button>
+                    </div>
+                    <div class="card">
+                        <h3>服务管理</h3>
+                        <table class="table">
+                            <thead><tr><th>服务</th><th>状态</th><th>操作</th></tr></thead>
+                            <tbody id="services-list"></tbody>
+                        </table>
+                    </div>
                 </div>
-                <div class="stat">
-                    <span class="stat-label">上传</span>
-                    <span class="stat-value" id="upload">-- MB/s</span>
-                </div>
-            </div>
-            
-            <div class="card">
-                <h2>📶 WiFi 状态</h2>
-                <div class="stat">
-                    <span class="stat-label">2.4GHz</span>
-                    <span class="stat-value" id="wifi-2g">--</span>
-                </div>
-                <div class="stat">
-                    <span class="stat-label">5GHz</span>
-                    <span class="stat-value" id="wifi-5g">--</span>
-                </div>
-                <div class="stat">
-                    <span class="stat-label">已连接设备</span>
-                    <span class="stat-value" id="clients">--</span>
-                </div>
-            </div>
-            
-            <div class="card">
-                <h2>🔗 已连接设备</h2>
-                <table>
-                    <thead>
-                        <tr><th>IP</th><th>MAC</th><th>主机名</th></tr>
-                    </thead>
-                    <tbody id="dhcp-clients">
-                        <tr><td colspan="3">加载中...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        
-        <div class="card" style="margin-top: 20px;">
-            <h2>⚡ 快捷操作</h2>
-            <button class="btn" onclick="location.href='/cgi-bin/reboot.cgi'">🔄 重启</button>
-            <button class="btn" onclick="location.href='/cgi-bin/wifi.cgi?toggle=1'">📶 WiFi 开关</button>
-            <button class="btn" onclick="location.href='/cgi-bin/backup.cgi'">💾 备份配置</button>
-            <button class="btn btn-danger" onclick="if(confirm('确定恢复出厂设置？')) location.href='/cgi-bin/factory-reset.cgi'">⚠️ 恢复出厂</button>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <span>ClawUI v1.0 | Alpine Linux</span>
+            <span id="footer-time"></span>
+        </footer>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal()">&times;</span>
+            <div id="modal-body"></div>
         </div>
     </div>
-    
-    <script>
-        // 加载状态数据
-        async function loadStats() {
-            try {
-                const resp = await fetch('/cgi-bin/stats.cgi');
-                const data = await resp.json();
-                
-                document.getElementById('uptime').textContent = data.uptime;
-                document.getElementById('cpu').textContent = data.cpu + '%';
-                document.getElementById('cpu-bar').style.width = data.cpu + '%';
-                document.getElementById('memory').textContent = data.memory;
-                document.getElementById('memory-bar').style.width = data.memory_percent + '%';
-                document.getElementById('wan-ip').textContent = data.wan_ip;
-                document.getElementById('download').textContent = data.download;
-                document.getElementById('upload').textContent = data.upload;
-                document.getElementById('wifi-2g').textContent = data.wifi_2g;
-                document.getElementById('wifi-5g').textContent = data.wifi_5g;
-                document.getElementById('clients').textContent = data.clients;
-                
-                // DHCP 客户端列表
-                const tbody = document.getElementById('dhcp-clients');
-                tbody.innerHTML = data.dhcp_list.map(c => 
-                    `<tr><td>${c.ip}</td><td>${c.mac}</td><td>${c.hostname || '--'}</td></tr>`
-                ).join('') || '<tr><td colspan="3">无设备</td></tr>';
-                
-            } catch (e) {
-                console.error('Failed to load stats:', e);
-            }
-        }
-        
-        // 每5秒刷新
-        loadStats();
-        setInterval(loadStats, 5000);
-    </script>
+
+    <!-- Scripts -->
+    <script src="/js/api.js"></script>
+    <script src="/js/app.js"></script>
 </body>
 </html>
