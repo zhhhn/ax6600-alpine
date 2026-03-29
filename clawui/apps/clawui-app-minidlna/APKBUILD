@@ -1,0 +1,17 @@
+# ClawUI App: MiniDLNA - APKBUILD
+pkgname=clawui-app-minidlna
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management for MiniDLNA media server"
+arch="noarch"
+license="MIT"
+depends="clawui minidlna"
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-minidlna"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-minidlna/"
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-minidlna/api"
+    cp "$srcdir"/api/handler.sh "$pkgdir/usr/share/clawui/apps/clawui-app-minidlna/api/"
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-minidlna/api/handler.sh"
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-minidlna/"
+}
+sha512sums=""

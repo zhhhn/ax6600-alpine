@@ -87,6 +87,10 @@ build_all() {
         "clawui-app-adguard"
         "clawui-app-vsftpd"
         "clawui-app-samba"
+        "clawui-app-minidlna"
+        "clawui-app-zerotier"
+        "clawui-app-openvpn"
+        "clawui-app-wol"
     )
     
     for app in "${apps[@]}"; do

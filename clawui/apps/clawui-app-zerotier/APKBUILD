@@ -1,0 +1,17 @@
+# ClawUI App: ZeroTier - APKBUILD
+pkgname=clawui-app-zerotier
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management for ZeroTier VPN"
+arch="noarch"
+license="MIT"
+depends="clawui zerotier"
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-zerotier"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-zerotier/"
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-zerotier/api"
+    cp "$srcdir"/api/handler.sh "$pkgdir/usr/share/clawui/apps/clawui-app-zerotier/api/"
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-zerotier/api/handler.sh"
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-zerotier/"
+}
+sha512sums=""

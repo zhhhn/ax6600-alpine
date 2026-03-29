@@ -1,0 +1,17 @@
+# ClawUI App: Wake-on-LAN - APKBUILD
+pkgname=clawui-app-wol
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management for Wake-on-LAN"
+arch="noarch"
+license="MIT"
+depends="clawui etherwake"
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-wol"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-wol/"
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-wol/api"
+    cp "$srcdir"/api/handler.sh "$pkgdir/usr/share/clawui/apps/clawui-app-wol/api/"
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-wol/api/handler.sh"
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-wol/"
+}
+sha512sums=""

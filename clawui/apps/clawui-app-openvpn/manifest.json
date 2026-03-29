@@ -1,0 +1,11 @@
+{
+  "id": "clawui-app-openvpn",
+  "name": "OpenVPN",
+  "version": "1.0.0",
+  "description": "OpenVPN 客户端 - 安全 VPN 连接",
+  "icon": "shield",
+  "category": "network",
+  "author": "ClawUI",
+  "permissions": ["network", "process"],
+  "dependencies": ["openvpn"]
+}

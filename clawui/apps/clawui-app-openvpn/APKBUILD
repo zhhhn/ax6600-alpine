@@ -1,0 +1,17 @@
+# ClawUI App: OpenVPN - APKBUILD
+pkgname=clawui-app-openvpn
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management for OpenVPN client"
+arch="noarch"
+license="MIT"
+depends="clawui openvpn"
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-openvpn"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-openvpn/"
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-openvpn/api"
+    cp "$srcdir"/api/handler.sh "$pkgdir/usr/share/clawui/apps/clawui-app-openvpn/api/"
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-openvpn/api/handler.sh"
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-openvpn/"
+}
+sha512sums=""

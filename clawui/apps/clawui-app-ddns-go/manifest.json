@@ -1,0 +1,11 @@
+{
+  "id": "clawui-app-ddns-go",
+  "name": "DDNS 客户端",
+  "version": "1.0.0",
+  "description": "动态 DNS 客户端 - 自动更新域名解析",
+  "icon": "globe",
+  "category": "network",
+  "author": "ClawUI",
+  "permissions": ["network", "process"],
+  "dependencies": ["ddns-client"]
+}

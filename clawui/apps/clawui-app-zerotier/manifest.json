@@ -1,0 +1,11 @@
+{
+  "id": "clawui-app-zerotier",
+  "name": "ZeroTier",
+  "version": "1.0.0",
+  "description": "ZeroTier 虚拟局域网 - 安全远程访问",
+  "icon": "network",
+  "category": "network",
+  "author": "ClawUI",
+  "permissions": ["network", "process"],
+  "dependencies": ["zerotier"]
+}

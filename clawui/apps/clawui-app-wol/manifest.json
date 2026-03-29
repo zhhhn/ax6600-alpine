@@ -1,0 +1,11 @@
+{
+  "id": "clawui-app-wol",
+  "name": "网络唤醒",
+  "version": "1.0.0",
+  "description": "Wake-on-LAN - 远程唤醒局域网设备",
+  "icon": "power",
+  "category": "tools",
+  "author": "ClawUI",
+  "permissions": ["network"],
+  "dependencies": ["etherwake"]
+}

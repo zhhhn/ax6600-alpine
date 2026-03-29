@@ -1,0 +1,11 @@
+{
+  "id": "clawui-app-minidlna",
+  "name": "MiniDLNA",
+  "version": "1.0.0",
+  "description": "MiniDLNA 媒体服务器 - DLNA/UPnP 媒体共享",
+  "icon": "media",
+  "category": "media",
+  "author": "ClawUI",
+  "permissions": ["network", "storage", "process"],
+  "dependencies": ["minidlna"]
+}
