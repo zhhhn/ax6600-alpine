@@ -40,6 +40,7 @@ build/initramfs-minimal/
 !build.sh
 !auto-dev.sh
 !scripts/*.sh
+!clawui/**/*.sh
 
 # 设备树
 *.dts

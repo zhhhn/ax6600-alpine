@@ -170,6 +170,40 @@ network-monitor report 24
 
 ---
 
+## 🖥️ Web 管理界面 (ClawUI)
+
+类似 OpenWrt LuCI 的 Web 管理界面，支持 apk 包管理。
+
+### 安装
+
+```bash
+# 安装 ClawUI
+cd clawui && make install
+
+# 启动服务
+rc-service clawui start
+```
+
+### 访问
+
+- Web UI: http://192.168.1.1
+- 默认端口: 80
+
+### 功能模块
+
+| 模块 | API | 功能 |
+|------|-----|------|
+| 状态 | `/api/status` | CPU、内存、流量统计 |
+| 网络 | `/api/network` | LAN/WAN/PPPoE 配置 |
+| 无线 | `/api/wireless` | 2.4GHz/5GHz 配置 |
+| 防火墙 | `/api/firewall` | 端口转发、NAT 规则 |
+| 软件包 | `/api/packages` | apk 安装/卸载/升级 |
+| 系统 | `/api/system` | 主机名、时区、服务管理 |
+
+详细文档: [clawui/README.md](clawui/README.md)
+
+---
+
 ## 🧪 测试
 
 ### 本地测试
