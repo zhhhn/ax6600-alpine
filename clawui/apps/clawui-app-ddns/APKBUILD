@@ -1,0 +1,17 @@
+# ClawUI App: DDNS - APKBUILD
+pkgname=clawui-app-ddns
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management for DDNS"
+arch="noarch"
+license="MIT"
+depends="clawui ddclient"
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-ddns"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-ddns/"
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-ddns/api"
+    cp "$srcdir"/api/handler.sh "$pkgdir/usr/share/clawui/apps/clawui-app-ddns/api/"
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-ddns/api/handler.sh"
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-ddns/"
+}
+sha512sums=""

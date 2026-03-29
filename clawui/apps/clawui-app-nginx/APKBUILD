@@ -1,0 +1,17 @@
+# ClawUI App: Nginx - APKBUILD
+pkgname=clawui-app-nginx
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management for Nginx"
+arch="noarch"
+license="MIT"
+depends="clawui nginx"
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-nginx"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-nginx/"
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-nginx/api"
+    cp "$srcdir"/api/handler.sh "$pkgdir/usr/share/clawui/apps/clawui-app-nginx/api/"
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-nginx/api/handler.sh"
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-nginx/"
+}
+sha512sums=""

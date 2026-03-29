@@ -1,0 +1,17 @@
+# ClawUI App: Docker - APKBUILD
+pkgname=clawui-app-docker
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management for Docker containers"
+arch="noarch"
+license="MIT"
+depends="clawui docker docker-cli"
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-docker"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-docker/"
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-docker/api"
+    cp "$srcdir"/api/handler.sh "$pkgdir/usr/share/clawui/apps/clawui-app-docker/api/"
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-docker/api/handler.sh"
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-docker/"
+}
+sha512sums=""

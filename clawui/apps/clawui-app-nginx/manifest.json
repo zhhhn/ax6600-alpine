@@ -1,0 +1,11 @@
+{
+  "id": "clawui-app-nginx",
+  "name": "Nginx",
+  "version": "1.0.0",
+  "description": "Nginx Web 服务器 - 反向代理管理",
+  "icon": "server",
+  "category": "network",
+  "author": "ClawUI",
+  "permissions": ["network", "process"],
+  "dependencies": ["nginx"]
+}

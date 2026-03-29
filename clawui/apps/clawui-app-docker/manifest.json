@@ -1,0 +1,11 @@
+{
+  "id": "clawui-app-docker",
+  "name": "Docker 管理",
+  "version": "1.0.0",
+  "description": "Docker 容器管理 - 轻量级容器管理界面",
+  "icon": "container",
+  "category": "tools",
+  "author": "ClawUI",
+  "permissions": ["network", "process"],
+  "dependencies": ["docker", "docker-cli"]
+}

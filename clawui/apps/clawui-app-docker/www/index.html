@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Docker 管理</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: sans-serif; padding: 20px; background: #f5f5f5; }
+.container { max-width: 1200px; margin: 0 auto; }
+.header { display: flex; justify-content: space-between; margin-bottom: 20px; }
+.status-badge { padding: 8px 16px; border-radius: 20px; font-weight: bold; }
+.status-running { background: #d4edda; color: #155724; }
+.status-stopped { background: #f8d7da; color: #721c24; }
+.card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+.btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px; }
+.btn-success { background: #28a745; color: white; } .btn-danger { background: #dc3545; color: white; } .btn-primary { background: #007bff; color: white; } .btn-warning { background: #ffc107; color: #333; }
+.form-group { margin-bottom: 15px; }
+.form-group label { display: block; margin-bottom: 5px; }
+.form-group input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+.container-list { list-style: none; }
+.container-item { padding: 15px; border: 1px solid #eee; border-radius: 5px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }
+.stat-card { background: #f8f9fa; padding: 15px; border-radius: 5px; text-align: center; }
+.stat-value { font-size: 24px; font-weight: bold; color: #007bff; }
+</style></head>
+<body>
+<div class="container">
+    <div class="header"><h1>🐳 Docker 容器管理</h1><span id="statusBadge" class="status-badge status-stopped">Docker 未运行</span></div>
+    <div class="stats">
+        <div class="stat-card"><div class="stat-value" id="statContainers">0</div><div>容器</div></div>
+        <div class="stat-card"><div class="stat-value" id="statRunning">0</div><div>运行中</div></div>
+        <div class="stat-card"><div class="stat-value" id="statImages">0</div><div>镜像</div></div>
+    </div>
+    <div class="card" style="margin-top: 20px;">
+        <h2>启动容器</h2>
+        <div class="form-group"><label>镜像名称</label><input type="text" id="imageName" placeholder="nginx:latest"></div>
+        <div class="form-group"><label>容器名称</label><input type="text" id="containerName" placeholder="my-container"></div>
+        <div class="form-group"><label>端口映射</label><input type="text" id="ports" placeholder="8080:80"></div>
+        <button class="btn btn-success" onclick="runContainer()">运行容器</button>
+    </div>
+    <div class="card">
+        <h2>容器列表</h2>
+        <button class="btn btn-primary" onclick="refreshContainers()">刷新</button>
+        <ul class="container-list" id="containerList"><li class="container-item">暂无容器</li></ul>
+    </div>
+</div>
+<script>
+async function api(action, data = null) {
+    const options = { method: data ? 'POST' : 'GET', headers: { 'Content-Type': 'application/json' } };
+    if (data) options.body = JSON.stringify(data);
+    const res = await fetch(`/api/clawui/apps/clawui-app-docker/${action}`, options);
+    return res.json();
+}
+async function refreshContainers() {
+    const data = await api('containers');
+    const list = document.getElementById('containerList');
+    list.innerHTML = (data.containers || []).map(c => `
+        <li class="container-item">
+            <span><strong>${c.name}</strong> - ${c.image} (${c.status})</span>
+            <div>
+                <button class="btn btn-${c.running ? 'warning' : 'success'}" onclick="api('${c.running ? 'stop' : 'start'}',{id:'${c.id}'},'POST')">${c.running ? '停止' : '启动'}</button>
+                <button class="btn btn-danger" onclick="api('remove',{id:'${c.id}'},'POST')">删除</button>
+            </div>
+        </li>
+    `).join('') || '<li class="container-item">暂无容器</li>';
+    document.getElementById('statContainers').textContent = data.containers?.length || 0;
+    document.getElementById('statRunning').textContent = data.containers?.filter(c=>c.running).length || 0;
+}
+async function runContainer() {
+    await api('run', {
+        image: document.getElementById('imageName').value,
+        name: document.getElementById('containerName').value,
+        ports: document.getElementById('ports').value
+    }, 'POST');
+    alert('容器启动中...');
+    refreshContainers();
+}
+async function checkDocker() {
+    const data = await api('status');
+    const badge = document.getElementById('statusBadge');
+    badge.textContent = data.dockerRunning ? 'Docker 运行中' : 'Docker 未运行';
+    badge.className = 'status-badge ' + (data.dockerRunning ? 'status-running' : 'status-stopped');
+}
+checkDocker();
+refreshContainers();
+</script>
+</body></html>

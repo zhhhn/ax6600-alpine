@@ -1,0 +1,11 @@
+{
+  "id": "clawui-app-mosquitto",
+  "name": "MQTT 服务器",
+  "version": "1.0.0",
+  "description": "Mosquitto MQTT 消息服务器 - 物联网支持",
+  "icon": "cloud",
+  "category": "iot",
+  "author": "ClawUI",
+  "permissions": ["network", "process"],
+  "dependencies": ["mosquitto"]
+}

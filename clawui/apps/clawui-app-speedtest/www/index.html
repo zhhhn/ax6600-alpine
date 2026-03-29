@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>网速测试</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: sans-serif; padding: 20px; background: #f5f5f5; }
+.container { max-width: 800px; margin: 0 auto; }
+.header { display: flex; justify-content: space-between; margin-bottom: 20px; }
+.card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+.btn { padding: 15px 30px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+.btn-primary { background: #007bff; color: white; }
+.btn-primary:disabled { background: #ccc; }
+.result { text-align: center; padding: 30px; }
+.result-value { font-size: 48px; font-weight: bold; color: #007bff; }
+.result-label { color: #666; margin-top: 10px; }
+.history { list-style: none; }
+.history-item { padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; }
+</style></head>
+<body>
+<div class="container">
+    <div class="header"><h1>🚀 网速测试</h1></div>
+    <div class="card">
+        <div style="text-align: center; padding: 40px;">
+            <button class="btn btn-primary" id="startBtn" onclick="startTest()">开始测速</button>
+            <div class="result" id="result" style="display: none;">
+                <div class="result-value" id="downloadSpeed">0</div>
+                <div class="result-label">Mbps 下载速度</div>
+                <div class="result-value" id="uploadSpeed" style="margin-top: 20px;">0</div>
+                <div class="result-label">Mbps 上传速度</div>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <h2>测试历史</h2>
+        <ul class="history" id="historyList"><li class="history-item">暂无记录</li></ul>
+    </div>
+</div>
+<script>
+async function api(action, data = null) {
+    const options = { method: data ? 'POST' : 'GET', headers: { 'Content-Type': 'application/json' } };
+    if (data) options.body = JSON.stringify(data);
+    const res = await fetch(`/api/clawui/apps/clawui-app-speedtest/${action}`, options);
+    return res.json();
+}
+async function startTest() {
+    const btn = document.getElementById('startBtn');
+    btn.disabled = true;
+    btn.textContent = '测试中...';
+    const result = await api('test');
+    document.getElementById('result').style.display = 'block';
+    document.getElementById('downloadSpeed').textContent = (result.download || 0).toFixed(2);
+    document.getElementById('uploadSpeed').textContent = (result.upload || 0).toFixed(2);
+    btn.disabled = false;
+    btn.textContent = '开始测速';
+    refreshHistory();
+}
+async function refreshHistory() {
+    const data = await api('history');
+    const list = document.getElementById('historyList');
+    list.innerHTML = (data.history || []).map(h => `<li class="history-item"><span>${h.date}</span><span>↓${h.download} Mbps ↑${h.upload} Mbps</span></li>`).join('') || '<li class="history-item">暂无记录</li>';
+}
+</script>
+</body></html>

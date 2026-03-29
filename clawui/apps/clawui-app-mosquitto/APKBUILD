@@ -1,0 +1,17 @@
+# ClawUI App: Mosquitto - APKBUILD
+pkgname=clawui-app-mosquitto
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management for Mosquitto MQTT"
+arch="noarch"
+license="MIT"
+depends="clawui mosquitto"
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-mosquitto"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-mosquitto/"
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-mosquitto/api"
+    cp "$srcdir"/api/handler.sh "$pkgdir/usr/share/clawui/apps/clawui-app-mosquitto/api/"
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-mosquitto/api/handler.sh"
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-mosquitto/"
+}
+sha512sums=""

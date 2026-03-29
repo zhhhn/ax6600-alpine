@@ -91,6 +91,12 @@ build_all() {
         "clawui-app-zerotier"
         "clawui-app-openvpn"
         "clawui-app-wol"
+        "clawui-app-docker"
+        "clawui-app-ddns"
+        "clawui-app-nginx"
+        "clawui-app-mosquitto"
+        "clawui-app-speedtest"
+        "clawui-app-shadowsocks"
     )
     
     for app in "${apps[@]}"; do

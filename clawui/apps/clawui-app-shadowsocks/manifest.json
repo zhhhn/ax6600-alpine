@@ -1,0 +1,11 @@
+{
+  "id": "clawui-app-shadowsocks",
+  "name": "Shadowsocks",
+  "version": "1.0.0",
+  "description": "Shadowsocks 代理客户端",
+  "icon": "shield",
+  "category": "network",
+  "author": "ClawUI",
+  "permissions": ["network", "process"],
+  "dependencies": ["shadowsocks-libev"]
+}

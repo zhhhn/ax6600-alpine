@@ -1,0 +1,17 @@
+# ClawUI App: Speedtest - APKBUILD
+pkgname=clawui-app-speedtest
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management for Speedtest"
+arch="noarch"
+license="MIT"
+depends="clawui speedtest-cli"
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-speedtest"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-speedtest/"
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-speedtest/api"
+    cp "$srcdir"/api/handler.sh "$pkgdir/usr/share/clawui/apps/clawui-app-speedtest/api/"
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-speedtest/api/handler.sh"
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-speedtest/"
+}
+sha512sums=""

@@ -1,0 +1,17 @@
+# ClawUI App: Shadowsocks - APKBUILD
+pkgname=clawui-app-shadowsocks
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management for Shadowsocks"
+arch="noarch"
+license="MIT"
+depends="clawui shadowsocks-libev"
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-shadowsocks"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-shadowsocks/"
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-shadowsocks/api"
+    cp "$srcdir"/api/handler.sh "$pkgdir/usr/share/clawui/apps/clawui-app-shadowsocks/api/"
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-shadowsocks/api/handler.sh"
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-shadowsocks/"
+}
+sha512sums=""

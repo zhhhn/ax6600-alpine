@@ -1,0 +1,11 @@
+{
+  "id": "clawui-app-speedtest",
+  "name": "网速测试",
+  "version": "1.0.0",
+  "description": "Speedtest 网速测试工具",
+  "icon": "speed",
+  "category": "tools",
+  "author": "ClawUI",
+  "permissions": ["network"],
+  "dependencies": ["speedtest-cli"]
+}
