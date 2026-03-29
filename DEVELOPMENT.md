@@ -1,195 +1,61 @@
-# JDCloud AX6600 Alpine Linux 开发文档
+# AX6600 Alpine Linux 开发文档
 
-## 项目目标
+## 目录
 
-将完整的 Alpine Linux 系统移植到京东云 AX6600 路由器，实现 OpenWrt 的所有核心功能。
+1. [功能开发进度](#功能开发进度)
+2. [文件结构](#文件结构)
+3. [使用指南](#使用指南)
+4. [测试方法](#测试方法)
+5. [虚拟环境](#虚拟环境)
+6. [开发日志](#开发日志)
 
 ---
 
 ## 功能开发进度
 
-### Phase 0: 基础功能 (P0) ✅
+### 完成状态：17/17 (100%) ✅
 
-#### 1.1 LED 指示灯控制 ✅
+#### Phase 0: 基础功能 (P0) ✅
 
-**实现：** `/etc/init.d/leds`
-- 支持电源灯、系统灯、WiFi 状态灯
-- 系统灯呼吸效果
-- WiFi 状态自动同步
+| 功能 | 文件 | 说明 |
+|------|------|------|
+| LED 控制 | `/etc/init.d/leds` | 电源灯、系统灯、WiFi 状态灯 |
+| 恢复出厂 | `/usr/sbin/factory-reset` | 支持选择性保留配置 |
+| 按钮控制 | `/etc/init.d/buttons` | Reset 长按 10 秒恢复出厂 |
 
-#### 1.2 恢复出厂设置 ✅
+#### Phase 1: 网络功能 (P1) ✅
 
-**实现：** `/usr/sbin/factory-reset`
-- 支持选择性保留配置
-- 自动备份
-- 支持 dry-run 预览
+| 功能 | 文件 | 说明 |
+|------|------|------|
+| WiFi 管理 | `/usr/sbin/wifi` | setup/up/down/status/scan |
+| 端口转发 | `/usr/sbin/port-forward` | add/del/list/clear |
+| 固件升级 | `/usr/sbin/sysupgrade` | 升级、备份、恢复配置 |
+| PPPoE | `/usr/sbin/pppoe-setup` | 宽带拨号配置 |
 
-#### 1.3 按钮控制 ✅
+#### Phase 2: 系统管理 (P2) ✅
 
-**实现：** `/etc/init.d/buttons`
-- Reset 按钮长按 10 秒恢复出厂
-- WPS 按钮支持
-- GPIO 监控守护进程
+| 功能 | 文件 | 说明 |
+|------|------|------|
+| Web UI | `/www/` + lighttpd | 状态、网络、WiFi、系统管理 |
+| IPv6 | `/etc/init.d/ipv6` | NAT66、radvd、DHCPv6 |
+| QoS | `/usr/sbin/qos` | 带宽控制、IP 限速 |
+| UPnP | `/etc/init.d/upnp` | miniupnpd 自动端口映射 |
 
----
+#### Phase 3: 安全功能 (P3) ✅
 
-### Phase 1: 网络功能 (P1) ✅
+| 功能 | 文件 | 说明 |
+|------|------|------|
+| VPN | `/usr/sbin/vpn-setup` | OpenVPN、WireGuard 客户端 |
+| 访客网络 | `/etc/init.d/guest-network` | 独立 SSID、网络隔离 |
+| MAC 过滤 | `/usr/sbin/mac-filter` | 黑白名单 |
 
-#### 2.1 WiFi 配置脚本 ✅
+#### Phase 4: 进阶功能 (P4) ✅
 
-**实现：** `/usr/sbin/wifi`
-```bash
-wifi setup <ssid> <password>   # 配置
-wifi up/down                    # 开关
-wifi status                     # 状态
-wifi scan                       # 扫描
-wifi channel <2g> <5g>          # 信道
-wifi hide/show                  # 隐藏/显示 SSID
-```
-
-#### 2.2 端口转发管理 ✅
-
-**实现：** `/usr/sbin/port-forward`
-```bash
-port-forward add <端口> <IP> <内网端口> [tcp/udp]
-port-forward del <端口>
-port-forward list
-port-forward clear
-```
-
-#### 2.3 固件升级脚本 ✅
-
-**实现：** `/usr/sbin/sysupgrade`
-```bash
-sysupgrade <固件>              # 升级（保留配置）
-sysupgrade -n <固件>           # 升级（清除配置）
-sysupgrade -b                  # 备份配置
-sysupgrade -r                  # 恢复配置
-sysupgrade -c <固件>           # 校验固件
-```
-
-#### 2.4 PPPoE 拨号支持 ✅
-
-**实现：** `/usr/sbin/pppoe-setup`
-```bash
-pppoe-setup config <用户名> <密码>
-pppoe-setup connect/disconnect
-pppoe-setup status
-```
-
----
-
-### Phase 2: 系统管理 (P2) ✅
-
-#### 3.1 Web 管理界面 ✅
-
-**实现：** `/www/` + `/etc/init.d/webui`
-- 状态概览（CPU、内存、网络）
-- 网络配置（LAN/WAN/PPPoE）
-- WiFi 配置
-- 系统管理（重启、备份、升级）
-- 响应式设计，支持移动端
-
-**CGI 脚本：**
-- `stats.cgi` - 状态 API
-- `network.cgi` - 网络设置
-- `wifi.cgi` - WiFi 设置
-- `system.cgi` - 系统设置
-- `password.cgi` - 密码修改
-- `factory-reset.cgi` - 恢复出厂
-- `reboot.cgi` - 重启
-
-#### 3.2 IPv6 支持 ✅
-
-**实现：** `/etc/init.d/ipv6`
-- IPv6 NAT66
-- radvd 路由通告
-- DHCPv6 支持
-
-#### 3.3 QoS/流量控制 ✅
-
-**实现：** `/usr/sbin/qos`
-```bash
-qos set <下载> <上传>          # 设置带宽
-qos priority <IP> <级别>       # IP 优先级
-qos limit <IP> <下载> <上传>   # IP 限速
-qos clear/status
-```
-
-#### 3.4 UPnP 支持 ✅
-
-**实现：** `/etc/init.d/upnp`
-- miniupnpd 配置
-- 自动端口映射
-
----
-
-### Phase 3: 安全增强 (P3) ✅
-
-#### 4.1 VPN 客户端 ✅
-
-**实现：** `/usr/sbin/vpn-setup`
-```bash
-vpn-setup openvpn config <服务器> <端口>
-vpn-setup wireguard config <接口> <端点>
-```
-- OpenVPN 客户端
-- WireGuard 客户端
-- 密钥生成
-
-#### 4.2 访客网络 ✅
-
-**实现：** `/etc/init.d/guest-network`
-- 独立 SSID
-- 网络隔离（无法访问主 LAN）
-- 独立 DHCP
-
-#### 4.3 MAC 过滤 ✅
-
-**实现：** `/usr/sbin/mac-filter` + `/etc/init.d/mac-filter`
-```bash
-mac-filter add/del <MAC>
-mac-filter mode whitelist/blacklist
-mac-filter list
-```
-
----
-
-### Phase 4: 进阶功能 (P4) ✅
-
-#### 5.1 USB 支持 ✅
-
-**实现：** `/etc/init.d/usb`
-- 自动挂载 USB 存储
-- 支持多种文件系统（vfat, ntfs-3g, ext4）
-
-#### 5.2 网络监控 ✅
-
-**实现：** `/usr/sbin/network-monitor`
-```bash
-network-monitor start/stop
-network-monitor report [小时]
-network-monitor top
-```
-- 流量统计
-- 历史报告
-
-#### 5.3 定时任务 ✅
-
-通过标准 cron 实现（`apk add cron`）
-
----
-
-## 开发进度总结
-
-| Phase | 功能数 | 完成数 | 状态 |
-|-------|--------|--------|------|
-| P0 基础 | 3 | 3 | ✅ 100% |
-| P1 网络 | 4 | 4 | ✅ 100% |
-| P2 系统 | 4 | 4 | ✅ 100% |
-| P3 安全 | 3 | 3 | ✅ 100% |
-| P4 进阶 | 3 | 3 | ✅ 100% |
-| **总计** | **17** | **17** | ✅ **100%** |
+| 功能 | 文件 | 说明 |
+|------|------|------|
+| USB | `/etc/init.d/usb` | 自动挂载 USB 存储 |
+| 网络监控 | `/usr/sbin/network-monitor` | 流量统计、报告 |
+| 定时任务 | cron | 标准 cron 支持 |
 
 ---
 
@@ -198,39 +64,36 @@ network-monitor top
 ```
 rootfs-overlay/
 ├── etc/
-│   ├── init.d/
-│   │   ├── leds           # LED 控制
-│   │   ├── buttons        # 按钮控制
-│   │   ├── upnp           # UPnP
-│   │   ├── ipv6           # IPv6
-│   │   ├── guest-network  # 访客网络
-│   │   ├── mac-filter     # MAC 过滤
-│   │   ├── webui          # Web UI
-│   │   └── usb            # USB 支持
-│   ├── hostapd/           # WiFi 配置
-│   └── network/
-├── usr/
-│   └── sbin/
-│       ├── wifi           # WiFi 管理
-│       ├── port-forward   # 端口转发
-│       ├── sysupgrade     # 固件升级
-│       ├── pppoe-setup    # PPPoE
-│       ├── qos            # QoS
-│       ├── factory-reset  # 恢复出厂
-│       ├── mac-filter     # MAC 过滤
-│       ├── vpn-setup      # VPN 配置
-│       └── network-monitor # 网络监控
-└── www/
-    ├── index.html         # Web 主页
-    ├── style.css          # 样式
-    └── cgi-bin/           # CGI 脚本
-        ├── stats.cgi
-        ├── network.cgi
-        ├── wifi.cgi
-        ├── system.cgi
-        ├── password.cgi
-        ├── factory-reset.cgi
-        └── reboot.cgi
+│   ├── init.d/              # OpenRC 服务
+│   │   ├── leds             # LED 控制
+│   │   ├── buttons          # 按钮控制
+│   │   ├── network          # 网络服务
+│   │   ├── wifi             # WiFi 服务
+│   │   ├── firewall         # 防火墙
+│   │   ├── dnsmasq          # DHCP/DNS
+│   │   ├── upnp             # UPnP
+│   │   ├── ipv6             # IPv6
+│   │   ├── guest-network    # 访客网络
+│   │   ├── webui            # Web UI
+│   │   └── usb              # USB 支持
+│   ├── hostapd/             # WiFi 配置
+│   ├── network/interfaces   # 网络接口
+│   ├── nftables.conf        # 防火墙规则
+│   └── dnsmasq.conf         # DHCP/DNS 配置
+├── usr/sbin/                # 管理工具
+│   ├── wifi                 # WiFi 管理
+│   ├── port-forward         # 端口转发
+│   ├── qos                  # 流量控制
+│   ├── factory-reset        # 恢复出厂
+│   ├── pppoe-setup          # PPPoE 配置
+│   ├── sysupgrade           # 固件升级
+│   ├── vpn-setup            # VPN 配置
+│   ├── mac-filter           # MAC 过滤
+│   └── network-monitor      # 网络监控
+└── www/                     # Web UI
+    ├── index.html           # 主页
+    ├── style.css            # 样式
+    └── cgi-bin/             # CGI 脚本
 ```
 
 ---
@@ -241,42 +104,173 @@ rootfs-overlay/
 
 ```bash
 # WiFi 管理
-wifi setup MyWiFi MyPassword
-wifi status
+wifi setup MyWiFi MyPassword   # 配置 SSID 和密码
+wifi up/down                   # 开关 WiFi
+wifi status                    # 查看状态
+wifi scan                      # 扫描网络
+wifi channel 6 36              # 设置信道
 
 # 端口转发
-port-forward add 8080 192.168.1.100 80
-port-forward list
+port-forward add 8080 192.168.1.100 80   # 添加规则
+port-forward del 8080                    # 删除规则
+port-forward list                        # 列出规则
 
-# QoS
-qos set 100 50
-qos limit 192.168.1.50 10 5
+# QoS 流量控制
+qos set 100 50                           # 设置带宽 (下载100M, 上传50M)
+qos limit 192.168.1.50 10 5              # IP 限速
+qos status                               # 查看状态
+
+# PPPoE 拨号
+pppoe-setup config username password     # 配置 PPPoE
+pppoe-setup connect                      # 连接
+pppoe-setup status                       # 状态
+
+# VPN 配置
+vpn-setup openvpn config server 1194     # OpenVPN
+vpn-setup wireguard config wg0 endpoint  # WireGuard
 
 # 恢复出厂
-factory-reset
+factory-reset                            # 恢复出厂设置
+factory-reset --keep-wifi                # 保留 WiFi 配置
 
 # 网络监控
-network-monitor start
-network-monitor report 24
-
-# VPN
-vpn-setup wireguard config wg0 my.vpn.server:51820
-vpn-setup openvpn config vpn.example.com 1194
+network-monitor start                    # 开始监控
+network-monitor report 24                # 24小时报告
 ```
 
-### Web 管理
+### Web UI
 
-访问 `http://192.168.1.1/` 进入 Web 管理界面。
+访问 http://192.168.1.1 进入管理界面。
+
+功能页面：
+- 状态概览：CPU、内存、网络流量
+- 网络设置：LAN/WAN/PPPoE
+- WiFi 设置：SSID、密码、信道
+- 系统管理：重启、升级、备份
+
+---
+
+## 测试方法
+
+### 本地测试
+
+```bash
+# 运行所有测试 (45项)
+./scripts/test-firmware.sh all
+
+# 快速冒烟测试
+./scripts/test-firmware.sh smoke
+
+# 只测试脚本
+./scripts/test-firmware.sh scripts
+
+# 只测试 CGI
+./scripts/test-firmware.sh cgi
+
+# 只测试配置
+./scripts/test-firmware.sh config
+```
+
+### 测试覆盖
+
+| 类别 | 测试数 | 说明 |
+|------|--------|------|
+| 用户脚本 | 9 | wifi, port-forward, qos 等 |
+| Init 脚本 | 11 | leds, network, wifi 等 |
+| CGI 脚本 | 7 | stats, network, wifi 等 |
+| 配置文件 | 18 | 网络、WiFi、防火墙配置 |
+| **总计** | **45** | |
+
+---
+
+## 虚拟环境
+
+### 方式一：Python 模拟器 (推荐)
+
+最轻量，无需任何依赖。
+
+```bash
+# 启动模拟器
+python3 scripts/simulate.py
+
+# 访问
+# Web UI: http://localhost:8080
+# API: http://localhost:8080/api/stats
+```
+
+### 方式二：Docker 路由器
+
+需要安装 Docker。
+
+```bash
+# 构建镜像
+./scripts/router-sim.sh build
+
+# 启动路由器
+./scripts/router-sim.sh start
+
+# 访问
+# Web UI: http://localhost:8080
+# SSH: ssh root@localhost -p 2222
+```
+
+### 方式三：QEMU 虚拟机
+
+需要安装 QEMU，可启动真实固件。
+
+```bash
+# 安装依赖
+sudo apt-get install qemu-system-arm qemu-utils
+
+# 创建虚拟机
+./scripts/vm.sh create
+
+# 启动
+./scripts/vm.sh start
+
+# 刷入固件
+./scripts/vm.sh flash out/ax6600-alpine-factory.bin
+```
+
+### 对比
+
+| 方式 | 启动速度 | 真实性 | WiFi 模拟 |
+|------|----------|--------|-----------|
+| Python 模拟器 | ⚡ 秒级 | 低 | ❌ |
+| Docker | ⚡ 秒级 | 中 | ❌ |
+| QEMU | 🐢 分钟 | 高 | ❌ |
+
+**注意：** 所有虚拟环境都无法模拟 ath11k WiFi 硬件。
+
+---
+
+## 开发日志
+
+### 2026-03-29
+
+- ✅ 完成全部 17 项功能开发
+- ✅ 添加固件测试框架 (45 项测试)
+- ✅ 添加虚拟路由器环境
+- ✅ 构建成功：factory.bin (46MB)
+
+### 2026-03-28
+
+- ✅ 修复 GitHub Actions 构建问题
+  - .gitignore 文件排除问题
+  - mknod 权限问题
+  - apk --no-scripts 支持
+  - 内核编译优化
+- ✅ 创建开发文档
 
 ---
 
 ## 更新日志
 
-| 日期 | 更新内容 |
-|------|----------|
-| 2026-03-29 | 完成所有 17 项功能开发 |
-| 2026-03-28 | 创建开发文档，修复构建问题 |
+| 日期 | 版本 | 更新内容 |
+|------|------|----------|
+| 2026-03-29 | v1.0 | 完成 17 项功能，首次正式发布 |
+| 2026-03-28 | v0.1 | 初始构建，修复 CI 问题 |
 
 ---
 
-*本文档已完成更新*
+*本文档持续更新中*
