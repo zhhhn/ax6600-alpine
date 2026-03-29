@@ -1,0 +1,49 @@
+#!/bin/sh
+# ClawUI API Dispatcher
+# Routes requests to appropriate handlers
+
+CLAWUI_DIR="/usr/share/clawui"
+API_DIR="${CLAWUI_DIR}/api"
+
+# Parse request
+REQUEST_PATH="${PATH_INFO:-/}"
+REQUEST_METHOD="${REQUEST_METHOD:-GET}"
+QUERY_STRING="${QUERY_STRING:-}"
+
+# Set content type
+echo "Content-Type: application/json"
+echo ""
+
+# Route API requests
+case "$REQUEST_PATH" in
+    /api/status)
+        . "${API_DIR}/status.sh"
+        ;;
+    /api/network)
+        . "${API_DIR}/network.sh"
+        ;;
+    /api/wireless)
+        . "${API_DIR}/wireless.sh"
+        ;;
+    /api/firewall)
+        . "${API_DIR}/firewall.sh"
+        ;;
+    /api/packages)
+        . "${API_DIR}/packages.sh"
+        ;;
+    /api/system)
+        . "${API_DIR}/system.sh"
+        ;;
+    /api/dhcp)
+        . "${API_DIR}/dhcp.sh"
+        ;;
+    /api/qos)
+        . "${API_DIR}/qos.sh"
+        ;;
+    /api/vpn)
+        . "${API_DIR}/vpn.sh"
+        ;;
+    *)
+        echo '{"error": "Not found", "path": "'"$REQUEST_PATH"'"}'
+        ;;
+esac

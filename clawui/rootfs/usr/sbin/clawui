@@ -1,0 +1,42 @@
+#!/bin/bash
+# ClawUI - Alpine Router Web Interface
+# Main application server
+
+CLAWUI_DIR="/usr/share/clawui"
+WWW_DIR="/usr/share/clawui/www"
+API_DIR="/usr/share/clawui/api"
+CONFIG_FILE="/etc/clawui/config"
+PORT="${CLAWUI_PORT:-80}"
+THEME="${CLAWUI_THEME:-bootstrap}"
+
+# Start HTTP server
+start_server() {
+    echo "Starting ClawUI on port $PORT..."
+    
+    # Check if already running
+    if [ -f /var/run/clawui.pid ]; then
+        kill $(cat /var/run/clawui.pid) 2>/dev/null || true
+    fi
+    
+    # Start busybox httpd with CGI
+    httpd -p "$PORT" -h "$WWW_DIR" -c /etc/clawui/httpd.conf
+    
+    echo $! > /var/run/clawui.pid
+    echo "ClawUI started"
+}
+
+# Stop server
+stop_server() {
+    if [ -f /var/run/clawui.pid ]; then
+        kill $(cat /var/run/clawui.pid) 2>/dev/null || true
+        rm -f /var/run/clawui.pid
+    fi
+    echo "ClawUI stopped"
+}
+
+case "$1" in
+    start) start_server ;;
+    stop) stop_server ;;
+    restart) stop_server; start_server ;;
+    *) echo "Usage: $0 {start|stop|restart}" ;;
+esac
