@@ -1,0 +1,17 @@
+# ClawUI App: Tailscale - APKBUILD
+pkgname=clawui-app-tailscale
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management for Tailscale VPN"
+arch="noarch"
+license="MIT"
+depends="clawui tailscale"
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-tailscale"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-tailscale/"
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-tailscale/api"
+    cp "$srcdir"/api/handler.sh "$pkgdir/usr/share/clawui/apps/clawui-app-tailscale/api/"
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-tailscale/api/handler.sh"
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-tailscale/"
+}
+sha512sums=""

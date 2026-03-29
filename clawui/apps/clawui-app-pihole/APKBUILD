@@ -1,0 +1,17 @@
+# ClawUI App: Pi-hole - APKBUILD
+pkgname=clawui-app-pihole
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management for Pi-hole"
+arch="noarch"
+license="MIT"
+depends="clawui pihole"
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-pihole"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-pihole/"
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-pihole/api"
+    cp "$srcdir"/api/handler.sh "$pkgdir/usr/share/clawui/apps/clawui-app-pihole/api/"
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-pihole/api/handler.sh"
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-pihole/"
+}
+sha512sums=""

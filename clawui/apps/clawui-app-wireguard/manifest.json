@@ -1,0 +1,11 @@
+{
+  "id": "clawui-app-wireguard",
+  "name": "WireGuard",
+  "version": "1.0.0",
+  "description": "WireGuard VPN 服务器/客户端",
+  "icon": "shield",
+  "category": "network",
+  "author": "ClawUI",
+  "permissions": ["network", "process"],
+  "dependencies": ["wireguard-tools"]
+}

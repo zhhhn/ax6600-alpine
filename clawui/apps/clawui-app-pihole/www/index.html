@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>Nginx</title>
+<html><head><meta charset="UTF-8"><title>Pi-hole</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: sans-serif; padding: 20px; background: #f5f5f5; }
-.container { max-width: 900px; margin: 0 auto; }
+.container { max-width: 1000px; margin: 0 auto; }
 .header { display: flex; justify-content: space-between; margin-bottom: 20px; }
 .status-badge { padding: 8px 16px; border-radius: 20px; font-weight: bold; }
 .status-running { background: #d4edda; color: #155724; }
@@ -11,14 +11,22 @@ body { font-family: sans-serif; padding: 20px; background: #f5f5f5; }
 .card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
 .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px; }
 .btn-success { background: #28a745; color: white; } .btn-danger { background: #dc3545; color: white; } .btn-primary { background: #007bff; color: white; } .btn-warning { background: #ffc107; color: #333; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }
+.stat-card { background: #f8f9fa; padding: 15px; border-radius: 5px; text-align: center; }
+.stat-value { font-size: 24px; font-weight: bold; color: #007bff; }
 </style></head>
 <body>
 <div class="container">
-    <div class="header"><h1>🌐 Nginx Web 服务器</h1><span id="statusBadge" class="status-badge status-stopped">已停止</span></div>
-    <div class="card">
+    <div class="header"><h1>🛡️ Pi-hole DNS 过滤</h1><span id="statusBadge" class="status-badge status-stopped">已停止</span></div>
+    <div class="stats">
+        <div class="stat-card"><div class="stat-value" id="statQueries">0</div><div>总查询</div></div>
+        <div class="stat-card"><div class="stat-value" id="statBlocked">0</div><div>已拦截</div></div>
+        <div class="stat-card"><div class="stat-value" id="statPercent">0%</div><div>拦截率</div></div>
+    </div>
+    <div class="card" style="margin-top: 20px;">
         <h2>服务控制</h2>
         <button class="btn btn-success" onclick="control('start')">启动</button>
-        <button class="btn btn-warning" onclick="control('reload')">重载配置</button>
+        <button class="btn btn-warning" onclick="control('disable')">禁用</button>
         <button class="btn btn-danger" onclick="control('stop')">停止</button>
         <button class="btn btn-primary" onclick="refreshStatus()">刷新</button>
     </div>
@@ -27,7 +35,7 @@ body { font-family: sans-serif; padding: 20px; background: #f5f5f5; }
 async function api(action, data = null) {
     const options = { method: data ? 'POST' : 'GET', headers: { 'Content-Type': 'application/json' } };
     if (data) options.body = JSON.stringify(data);
-    const res = await fetch(`/api/clawui/apps/clawui-app-nginx/${action}`, options);
+    const res = await fetch(`/api/clawui/apps/clawui-app-pihole/${action}`, options);
     return res.json();
 }
 async function refreshStatus() {
@@ -35,6 +43,11 @@ async function refreshStatus() {
     const badge = document.getElementById('statusBadge');
     badge.textContent = data.running ? '运行中' : '已停止';
     badge.className = 'status-badge ' + (data.running ? 'status-running' : 'status-stopped');
+    if (data.stats) {
+        document.getElementById('statQueries').textContent = data.stats.queries || 0;
+        document.getElementById('statBlocked').textContent = data.stats.blocked || 0;
+        document.getElementById('statPercent').textContent = (data.stats.percent || 0) + '%';
+    }
 }
 async function control(action) { await api(action, {}, 'POST'); setTimeout(refreshStatus, 1000); }
 refreshStatus();

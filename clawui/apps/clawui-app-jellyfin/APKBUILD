@@ -1,0 +1,17 @@
+# ClawUI App: Jellyfin - APKBUILD
+pkgname=clawui-app-jellyfin
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management for Jellyfin"
+arch="noarch"
+license="MIT"
+depends="clawui jellyfin"
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-jellyfin"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-jellyfin/"
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-jellyfin/api"
+    cp "$srcdir"/api/handler.sh "$pkgdir/usr/share/clawui/apps/clawui-app-jellyfin/api/"
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-jellyfin/api/handler.sh"
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-jellyfin/"
+}
+sha512sums=""

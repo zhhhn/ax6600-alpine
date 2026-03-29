@@ -1,0 +1,17 @@
+# ClawUI App: PhotoPrism - APKBUILD
+pkgname=clawui-app-photoprism
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management for PhotoPrism"
+arch="noarch"
+license="MIT"
+depends="clawui photoprism"
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-photoprism"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-photoprism/"
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-photoprism/api"
+    cp "$srcdir"/api/handler.sh "$pkgdir/usr/share/clawui/apps/clawui-app-photoprism/api/"
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-photoprism/api/handler.sh"
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-photoprism/"
+}
+sha512sums=""

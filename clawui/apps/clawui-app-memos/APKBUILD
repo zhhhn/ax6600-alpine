@@ -1,0 +1,17 @@
+# ClawUI App: Memos - APKBUILD
+pkgname=clawui-app-memos
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management for Memos"
+arch="noarch"
+license="MIT"
+depends="clawui memos"
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-memos"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-memos/"
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-memos/api"
+    cp "$srcdir"/api/handler.sh "$pkgdir/usr/share/clawui/apps/clawui-app-memos/api/"
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-memos/api/handler.sh"
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-memos/"
+}
+sha512sums=""

@@ -1,0 +1,11 @@
+{
+  "id": "clawui-app-ttrss",
+  "name": "Tiny Tiny RSS",
+  "version": "1.0.0",
+  "description": "TTRSS RSS 阅读器",
+  "icon": "rss",
+  "category": "tools",
+  "author": "ClawUI",
+  "permissions": ["network", "process"],
+  "dependencies": ["ttrss", "php", "postgresql"]
+}

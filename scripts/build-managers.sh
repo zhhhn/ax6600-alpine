@@ -93,10 +93,22 @@ build_all() {
         "clawui-app-wol"
         "clawui-app-docker"
         "clawui-app-ddns"
-        "clawui-app-nginx"
         "clawui-app-mosquitto"
         "clawui-app-speedtest"
         "clawui-app-shadowsocks"
+        "clawui-app-wireguard"
+        "clawui-app-tailscale"
+        "clawui-app-pihole"
+        "clawui-app-qbittorrent"
+        "clawui-app-syncthing"
+        "clawui-app-filebrowser"
+        "clawui-app-jellyfin"
+        "clawui-app-gitea"
+        "clawui-app-uptime"
+        "clawui-app-memos"
+        "clawui-app-photoprism"
+        "clawui-app-ttrss"
+        "clawui-app-nginx"
     )
     
     for app in "${apps[@]}"; do

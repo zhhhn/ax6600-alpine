@@ -1,0 +1,11 @@
+{
+  "id": "clawui-app-tailscale",
+  "name": "Tailscale",
+  "version": "1.0.0",
+  "description": "Tailscale 零配置 VPN",
+  "icon": "network",
+  "category": "network",
+  "author": "ClawUI",
+  "permissions": ["network", "process"],
+  "dependencies": ["tailscale"]
+}

@@ -1,0 +1,17 @@
+# ClawUI App: Syncthing - APKBUILD
+pkgname=clawui-app-syncthing
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management for Syncthing"
+arch="noarch"
+license="MIT"
+depends="clawui syncthing"
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-syncthing"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-syncthing/"
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-syncthing/api"
+    cp "$srcdir"/api/handler.sh "$pkgdir/usr/share/clawui/apps/clawui-app-syncthing/api/"
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-syncthing/api/handler.sh"
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-syncthing/"
+}
+sha512sums=""

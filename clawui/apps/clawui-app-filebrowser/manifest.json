@@ -1,0 +1,11 @@
+{
+  "id": "clawui-app-filebrowser",
+  "name": "File Browser",
+  "version": "1.0.0",
+  "description": "File Browser 文件管理",
+  "icon": "folder",
+  "category": "storage",
+  "author": "ClawUI",
+  "permissions": ["network", "storage", "process"],
+  "dependencies": ["filebrowser"]
+}

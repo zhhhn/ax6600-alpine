@@ -1,0 +1,17 @@
+# ClawUI App: qBittorrent - APKBUILD
+pkgname=clawui-app-qbittorrent
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management for qBittorrent"
+arch="noarch"
+license="MIT"
+depends="clawui qbittorrent"
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-qbittorrent"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-qbittorrent/"
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-qbittorrent/api"
+    cp "$srcdir"/api/handler.sh "$pkgdir/usr/share/clawui/apps/clawui-app-qbittorrent/api/"
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-qbittorrent/api/handler.sh"
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-qbittorrent/"
+}
+sha512sums=""

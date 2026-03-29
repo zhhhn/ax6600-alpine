@@ -1,0 +1,17 @@
+# ClawUI App: Gitea - APKBUILD
+pkgname=clawui-app-gitea
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management for Gitea"
+arch="noarch"
+license="MIT"
+depends="clawui gitea"
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-gitea"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-gitea/"
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-gitea/api"
+    cp "$srcdir"/api/handler.sh "$pkgdir/usr/share/clawui/apps/clawui-app-gitea/api/"
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-gitea/api/handler.sh"
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-gitea/"
+}
+sha512sums=""

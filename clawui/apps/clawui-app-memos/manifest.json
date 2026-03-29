@@ -1,0 +1,11 @@
+{
+  "id": "clawui-app-memos",
+  "name": "Memos",
+  "version": "1.0.0",
+  "description": "Memos 轻量笔记",
+  "icon": "edit",
+  "category": "tools",
+  "author": "ClawUI",
+  "permissions": ["network", "storage", "process"],
+  "dependencies": ["memos"]
+}

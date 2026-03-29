@@ -1,0 +1,17 @@
+# ClawUI App: WireGuard - APKBUILD
+pkgname=clawui-app-wireguard
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management for WireGuard VPN"
+arch="noarch"
+license="MIT"
+depends="clawui wireguard-tools"
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-wireguard"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-wireguard/"
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-wireguard/api"
+    cp "$srcdir"/api/handler.sh "$pkgdir/usr/share/clawui/apps/clawui-app-wireguard/api/"
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-wireguard/api/handler.sh"
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-wireguard/"
+}
+sha512sums=""

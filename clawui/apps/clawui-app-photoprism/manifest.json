@@ -1,0 +1,11 @@
+{
+  "id": "clawui-app-photoprism",
+  "name": "PhotoPrism",
+  "version": "1.0.0",
+  "description": "PhotoPrism 照片管理",
+  "icon": "image",
+  "category": "media",
+  "author": "ClawUI",
+  "permissions": ["network", "storage", "process"],
+  "dependencies": ["photoprism"]
+}

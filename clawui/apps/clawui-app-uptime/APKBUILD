@@ -1,0 +1,17 @@
+# ClawUI App: Uptime Kuma - APKBUILD
+pkgname=clawui-app-uptime
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management for Uptime Kuma"
+arch="noarch"
+license="MIT"
+depends="clawui uptime-kuma"
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-uptime"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-uptime/"
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-uptime/api"
+    cp "$srcdir"/api/handler.sh "$pkgdir/usr/share/clawui/apps/clawui-app-uptime/api/"
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-uptime/api/handler.sh"
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-uptime/"
+}
+sha512sums=""

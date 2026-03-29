@@ -1,0 +1,11 @@
+{
+  "id": "clawui-app-jellyfin",
+  "name": "Jellyfin",
+  "version": "1.0.0",
+  "description": "Jellyfin 媒体服务器",
+  "icon": "media",
+  "category": "media",
+  "author": "ClawUI",
+  "permissions": ["network", "storage", "process"],
+  "dependencies": ["jellyfin"]
+}

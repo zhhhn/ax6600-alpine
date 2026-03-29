@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>qBittorrent</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: sans-serif; padding: 20px; background: #f5f5f5; }
+.container { max-width: 1100px; margin: 0 auto; }
+.header { display: flex; justify-content: space-between; margin-bottom: 20px; }
+.status-badge { padding: 8px 16px; border-radius: 20px; font-weight: bold; }
+.status-running { background: #d4edda; color: #155724; }
+.status-stopped { background: #f8d7da; color: #721c24; }
+.card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+.btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px; }
+.btn-success { background: #28a745; color: white; } .btn-danger { background: #dc3545; color: white; } .btn-primary { background: #007bff; color: white; }
+.form-group { margin-bottom: 15px; }
+.form-group label { display: block; margin-bottom: 5px; }
+.form-group input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+.torrent-list { list-style: none; }
+.torrent-item { padding: 15px; border: 1px solid #eee; border-radius: 5px; margin-bottom: 10px; }
+.progress { height: 8px; background: #e9ecef; border-radius: 4px; overflow: hidden; margin: 10px 0; }
+.progress-bar { height: 100%; background: #28a745; }
+</style></head>
+<body>
+<div class="container">
+    <div class="header"><h1>📥 qBittorrent</h1><span id="statusBadge" class="status-badge status-stopped">已停止</span></div>
+    <div class="card">
+        <h2>服务控制</h2>
+        <button class="btn btn-success" onclick="control('start')">启动</button>
+        <button class="btn btn-danger" onclick="control('stop')">停止</button>
+        <button class="btn btn-primary" onclick="refreshStatus()">刷新</button>
+    </div>
+    <div class="card">
+        <h2>添加种子</h2>
+        <div class="form-group"><label>Magnet 链接/种子 URL</label><input type="text" id="torrentUrl" placeholder="magnet:?xt=..."></div>
+        <button class="btn btn-success" onclick="addTorrent()">添加</button>
+    </div>
+    <div class="card">
+        <h2>下载列表</h2>
+        <ul class="torrent-list" id="torrentList"><li class="torrent-item">暂无任务</li></ul>
+    </div>
+</div>
+<script>
+async function api(action, data = null) {
+    const options = { method: data ? 'POST' : 'GET', headers: { 'Content-Type': 'application/json' } };
+    if (data) options.body = JSON.stringify(data);
+    const res = await fetch(`/api/clawui/apps/clawui-app-qbittorrent/${action}`, options);
+    return res.json();
+}
+async function refreshStatus() {
+    const data = await api('status');
+    const badge = document.getElementById('statusBadge');
+    badge.textContent = data.running ? '运行中' : '已停止';
+    badge.className = 'status-badge ' + (data.running ? 'status-running' : 'status-stopped');
+}
+async function control(action) { await api(action, {}, 'POST'); setTimeout(refreshStatus, 1000); }
+async function addTorrent() {
+    await api('add', { url: document.getElementById('torrentUrl').value }, 'POST');
+    alert('已添加');
+}
+async function refreshTorrents() {
+    const data = await api('torrents');
+    const list = document.getElementById('torrentList');
+    list.innerHTML = (data.torrents || []).map(t => `
+        <li class="torrent-item">
+            <strong>${t.name}</strong>
+            <div class="progress"><div class="progress-bar" style="width:${t.progress}%"></div></div>
+            <small>${t.progress}% - ${t.speed}</small>
+        </li>
+    `).join('') || '<li class="torrent-item">暂无任务</li>';
+}
+refreshStatus();
+setInterval(refreshTorrents, 5000);
+</script>
+</body></html>

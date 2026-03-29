@@ -1,0 +1,17 @@
+# ClawUI App: Tiny Tiny RSS - APKBUILD
+pkgname=clawui-app-ttrss
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management for Tiny Tiny RSS"
+arch="noarch"
+license="MIT"
+depends="clawui ttrss php postgresql"
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-ttrss"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-ttrss/"
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-ttrss/api"
+    cp "$srcdir"/api/handler.sh "$pkgdir/usr/share/clawui/apps/clawui-app-ttrss/api/"
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-ttrss/api/handler.sh"
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-ttrss/"
+}
+sha512sums=""

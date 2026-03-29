@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>Nginx</title>
+<html><head><meta charset="UTF-8"><title>File Browser</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: sans-serif; padding: 20px; background: #f5f5f5; }
@@ -10,24 +10,32 @@ body { font-family: sans-serif; padding: 20px; background: #f5f5f5; }
 .status-stopped { background: #f8d7da; color: #721c24; }
 .card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
 .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px; }
-.btn-success { background: #28a745; color: white; } .btn-danger { background: #dc3545; color: white; } .btn-primary { background: #007bff; color: white; } .btn-warning { background: #ffc107; color: #333; }
+.btn-success { background: #28a745; color: white; } .btn-danger { background: #dc3545; color: white; } .btn-primary { background: #007bff; color: white; }
+.form-group { margin-bottom: 15px; }
+.form-group label { display: block; margin-bottom: 5px; }
+.form-group input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
 </style></head>
 <body>
 <div class="container">
-    <div class="header"><h1>🌐 Nginx Web 服务器</h1><span id="statusBadge" class="status-badge status-stopped">已停止</span></div>
+    <div class="header"><h1>📁 File Browser</h1><span id="statusBadge" class="status-badge status-stopped">已停止</span></div>
     <div class="card">
         <h2>服务控制</h2>
         <button class="btn btn-success" onclick="control('start')">启动</button>
-        <button class="btn btn-warning" onclick="control('reload')">重载配置</button>
         <button class="btn btn-danger" onclick="control('stop')">停止</button>
         <button class="btn btn-primary" onclick="refreshStatus()">刷新</button>
+    </div>
+    <div class="card">
+        <h2>配置</h2>
+        <div class="form-group"><label>根目录</label><input type="text" id="rootDir" value="/srv"></div>
+        <div class="form-group"><label>端口</label><input type="number" id="port" value="8080"></div>
+        <button class="btn btn-success" onclick="saveConfig()">保存配置</button>
     </div>
 </div>
 <script>
 async function api(action, data = null) {
     const options = { method: data ? 'POST' : 'GET', headers: { 'Content-Type': 'application/json' } };
     if (data) options.body = JSON.stringify(data);
-    const res = await fetch(`/api/clawui/apps/clawui-app-nginx/${action}`, options);
+    const res = await fetch(`/api/clawui/apps/clawui-app-filebrowser/${action}`, options);
     return res.json();
 }
 async function refreshStatus() {
@@ -37,6 +45,10 @@ async function refreshStatus() {
     badge.className = 'status-badge ' + (data.running ? 'status-running' : 'status-stopped');
 }
 async function control(action) { await api(action, {}, 'POST'); setTimeout(refreshStatus, 1000); }
+async function saveConfig() {
+    await api('config', { root: document.getElementById('rootDir').value, port: document.getElementById('port').value }, 'POST');
+    alert('配置已保存');
+}
 refreshStatus();
 </script>
 </body></html>

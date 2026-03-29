@@ -1,0 +1,11 @@
+{
+  "id": "clawui-app-gitea",
+  "name": "Gitea",
+  "version": "1.0.0",
+  "description": "Gitea Git 代码托管",
+  "icon": "code",
+  "category": "tools",
+  "author": "ClawUI",
+  "permissions": ["network", "storage", "process"],
+  "dependencies": ["gitea"]
+}

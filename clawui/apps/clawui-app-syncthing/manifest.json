@@ -1,0 +1,11 @@
+{
+  "id": "clawui-app-syncthing",
+  "name": "Syncthing",
+  "version": "1.0.0",
+  "description": "Syncthing 文件同步",
+  "icon": "sync",
+  "category": "storage",
+  "author": "ClawUI",
+  "permissions": ["network", "storage", "process"],
+  "dependencies": ["syncthing"]
+}

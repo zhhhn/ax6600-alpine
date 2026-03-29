@@ -1,0 +1,17 @@
+# ClawUI App: File Browser - APKBUILD
+pkgname=clawui-app-filebrowser
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management for File Browser"
+arch="noarch"
+license="MIT"
+depends="clawui filebrowser"
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-filebrowser"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-filebrowser/"
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-filebrowser/api"
+    cp "$srcdir"/api/handler.sh "$pkgdir/usr/share/clawui/apps/clawui-app-filebrowser/api/"
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-filebrowser/api/handler.sh"
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-filebrowser/"
+}
+sha512sums=""
