@@ -1,0 +1,17 @@
+# ClawUI App: Diag - APKBUILD
+pkgname=clawui-app-diag
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management for network diagnostics"
+arch="noarch"
+license="MIT"
+depends="clawui iputils traceroute nmap"
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-diag"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-diag/" 2>/dev/null || true
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-diag/api"
+    cp "$srcdir"/api/*.sh "$pkgdir/usr/share/clawui/apps/clawui-app-diag/api/" 2>/dev/null || true
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-diag/api/"*.sh 2>/dev/null || true
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-diag/"
+}
+sha512sums=""

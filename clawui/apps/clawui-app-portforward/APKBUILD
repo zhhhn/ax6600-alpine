@@ -1,0 +1,17 @@
+# ClawUI App: Port Forward - APKBUILD
+pkgname=clawui-app-portforward
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management for port forwarding"
+arch="noarch"
+license="MIT"
+depends="clawui nftables"
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-portforward"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-portforward/" 2>/dev/null || true
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-portforward/api"
+    cp "$srcdir"/api/*.sh "$pkgdir/usr/share/clawui/apps/clawui-app-portforward/api/" 2>/dev/null || true
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-portforward/api/"*.sh 2>/dev/null || true
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-portforward/"
+}
+sha512sums=""

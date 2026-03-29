@@ -1,0 +1,12 @@
+{
+    "id": "clawui-app-traffic",
+    "name": "流量监控",
+    "version": "1.0.0",
+    "description": "实时流量监控和统计，支持多设备和应用流量分析",
+    "author": "ClawUI Team",
+    "icon": "chart-line",
+    "category": "network",
+    "depends": [],
+    "provides": ["clawui-app-traffic"],
+    "api_version": 1
+}

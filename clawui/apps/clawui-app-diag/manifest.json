@@ -1,0 +1,12 @@
+{
+    "id": "clawui-app-diag",
+    "name": "网络诊断",
+    "version": "1.0.0",
+    "description": "网络诊断工具，包含Ping、Traceroute、DNS测试、端口扫描等",
+    "author": "ClawUI Team",
+    "icon": "stethoscope",
+    "category": "network",
+    "depends": ["iputils", "traceroute", "nmap", "dnsutils"],
+    "provides": ["clawui-app-diag"],
+    "api_version": 1
+}

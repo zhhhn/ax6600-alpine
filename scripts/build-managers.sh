@@ -109,6 +109,14 @@ build_all() {
         "clawui-app-photoprism"
         "clawui-app-ttrss"
         "clawui-app-nginx"
+        "clawui-app-backup"
+        "clawui-app-diag"
+        "clawui-app-multiwan"
+        "clawui-app-portforward"
+        "clawui-app-pppoe"
+        "clawui-app-qos"
+        "clawui-app-routes"
+        "clawui-app-traffic"
     )
     
     for app in "${apps[@]}"; do

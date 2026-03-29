@@ -1,0 +1,17 @@
+# ClawUI App: Traffic - APKBUILD
+pkgname=clawui-app-traffic
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management for traffic monitoring"
+arch="noarch"
+license="MIT"
+depends="clawui"
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-traffic"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-traffic/" 2>/dev/null || true
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-traffic/api"
+    cp "$srcdir"/api/*.sh "$pkgdir/usr/share/clawui/apps/clawui-app-traffic/api/" 2>/dev/null || true
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-traffic/api/"*.sh 2>/dev/null || true
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-traffic/"
+}
+sha512sums=""

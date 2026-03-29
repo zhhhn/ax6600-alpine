@@ -1,0 +1,17 @@
+{
+    "id": "clawui-app-pppoe",
+    "name": "PPPoE",
+    "version": "1.0.0",
+    "description": "PPPoE 拨号配置，支持家庭宽带拨号上网",
+    "author": "ClawUI Team",
+    "icon": "globe",
+    "category": "network",
+    "depends": ["ppp", "rp-pppoe"],
+    "provides": ["clawui-app-pppoe"],
+    "api_version": 1,
+    "pages": [
+        {"path": "/", "name": "状态"},
+        {"path": "/setup", "name": "设置"},
+        {"path": "/advanced", "name": "高级"}
+    ]
+}

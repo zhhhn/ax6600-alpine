@@ -1,0 +1,17 @@
+# ClawUI App: PPPoE - APKBUILD
+pkgname=clawui-app-pppoe
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management for PPPoE connection"
+arch="noarch"
+license="MIT"
+depends="clawui ppp rp-pppoe"
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-pppoe"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-pppoe/" 2>/dev/null || true
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-pppoe/api"
+    cp "$srcdir"/api/*.sh "$pkgdir/usr/share/clawui/apps/clawui-app-pppoe/api/" 2>/dev/null || true
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-pppoe/api/"*.sh 2>/dev/null || true
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-pppoe/"
+}
+sha512sums=""

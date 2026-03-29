@@ -1,0 +1,17 @@
+# ClawUI App: Backup - APKBUILD
+pkgname=clawui-app-backup
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management for backup and restore"
+arch="noarch"
+license="MIT"
+depends="clawui"
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-backup"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-backup/" 2>/dev/null || true
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-backup/api"
+    cp "$srcdir"/api/*.sh "$pkgdir/usr/share/clawui/apps/clawui-app-backup/api/" 2>/dev/null || true
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-backup/api/"*.sh 2>/dev/null || true
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-backup/"
+}
+sha512sums=""

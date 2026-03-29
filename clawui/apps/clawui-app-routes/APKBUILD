@@ -1,0 +1,17 @@
+# ClawUI App: Routes - APKBUILD
+pkgname=clawui-app-routes
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management for static routes"
+arch="noarch"
+license="MIT"
+depends="clawui iproute2"
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-routes"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-routes/" 2>/dev/null || true
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-routes/api"
+    cp "$srcdir"/api/*.sh "$pkgdir/usr/share/clawui/apps/clawui-app-routes/api/" 2>/dev/null || true
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-routes/api/"*.sh 2>/dev/null || true
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-routes/"
+}
+sha512sums=""

@@ -1,0 +1,17 @@
+# ClawUI App: QoS - APKBUILD
+pkgname=clawui-app-qos
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management for QoS traffic control"
+arch="noarch"
+license="MIT"
+depends="clawui iproute2 tc"
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-qos"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-qos/" 2>/dev/null || true
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-qos/api"
+    cp "$srcdir"/api/*.sh "$pkgdir/usr/share/clawui/apps/clawui-app-qos/api/" 2>/dev/null || true
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-qos/api/"*.sh 2>/dev/null || true
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-qos/"
+}
+sha512sums=""

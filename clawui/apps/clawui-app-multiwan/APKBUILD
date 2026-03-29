@@ -1,0 +1,17 @@
+# ClawUI App: MultiWAN - APKBUILD
+pkgname=clawui-app-multiwan
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management for multi-WAN load balancing"
+arch="noarch"
+license="MIT"
+depends="clawui iproute2 iptables"
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-multiwan"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-multiwan/" 2>/dev/null || true
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-multiwan/api"
+    cp "$srcdir"/api/*.sh "$pkgdir/usr/share/clawui/apps/clawui-app-multiwan/api/" 2>/dev/null || true
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-multiwan/api/"*.sh 2>/dev/null || true
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-multiwan/"
+}
+sha512sums=""
