@@ -1,5 +1,0 @@
-# Aria2 configuration (conf.d)
-RPC_PORT=6800
-DOWNLOAD_DIR=/var/lib/aria2/downloads
-MAX_CONNECTIONS=16
-RPC_SECRET=""
