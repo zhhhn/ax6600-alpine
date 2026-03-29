@@ -1,0 +1,11 @@
+{
+  "id": "clawui-app-xray",
+  "name": "Xray",
+  "version": "1.0.0",
+  "description": "Xray 多协议代理 (VLESS/VMess/Trojan)",
+  "icon": "shield-check",
+  "category": "proxy",
+  "author": "ClawUI",
+  "permissions": ["network", "process"],
+  "dependencies": ["xray"]
+}

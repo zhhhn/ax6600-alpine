@@ -1,0 +1,18 @@
+# ClawUI App: Hysteria2 - APKBUILD
+pkgname=clawui-app-hysteria2
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management for Hysteria2 QUIC proxy"
+arch="noarch"
+license="MIT"
+depends="clawui hysteria"
+source=""
+
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-hysteria2"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-hysteria2/"
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-hysteria2/api"
+    cp "$srcdir"/api/handler.sh "$pkgdir/usr/share/clawui/apps/clawui-app-hysteria2/api/"
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-hysteria2/api/handler.sh"
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-hysteria2/"
+}

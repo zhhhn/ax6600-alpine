@@ -1,0 +1,11 @@
+{
+  "id": "clawui-app-socks5",
+  "name": "SOCKS5 Server",
+  "version": "1.0.0",
+  "description": "SOCKS5/HTTP 代理服务端",
+  "icon": "server",
+  "category": "proxy",
+  "author": "ClawUI",
+  "permissions": ["network", "process"],
+  "dependencies": ["dante-server"]
+}

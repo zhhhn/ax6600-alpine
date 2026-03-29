@@ -1,0 +1,11 @@
+{
+  "id": "clawui-app-homeproxy",
+  "name": "HomeProxy",
+  "version": "1.0.0",
+  "description": "透明代理网关 (支持多节点分流)",
+  "icon": "gateway",
+  "category": "proxy",
+  "author": "ClawUI",
+  "permissions": ["network", "process", "firewall"],
+  "dependencies": ["iptables", "ipset"]
+}

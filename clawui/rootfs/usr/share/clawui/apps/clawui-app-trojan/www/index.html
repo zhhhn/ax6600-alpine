@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trojan - ClawUI</title>
+    <link rel="stylesheet" href="/css/clawui.css">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <h1>🔒 Trojan 代理</h1>
+            <p class="app-desc">TLS 伪装代理</p>
+        </header>
+
+        <section class="status-section">
+            <div class="status-card" id="status-card">
+                <div class="status-indicator" id="status-indicator">
+                    <span class="status-dot"></span>
+                    <span class="status-text">检查中...</span>
+                </div>
+                <div class="status-details" id="status-details"></div>
+            </div>
+            <div class="traffic-info" id="traffic-info">
+                <div class="traffic-item">
+                    <span class="traffic-label">↓ 下载</span>
+                    <span class="traffic-value" id="traffic-rx">0 B</span>
+                </div>
+                <div class="traffic-item">
+                    <span class="traffic-label">↑ 上传</span>
+                    <span class="traffic-value" id="traffic-tx">0 B</span>
+                </div>
+            </div>
+            <div class="control-buttons">
+                <button class="btn btn-start" id="btn-start">启动</button>
+                <button class="btn btn-stop" id="btn-stop">停止</button>
+                <button class="btn btn-restart" id="btn-restart">重启</button>
+            </div>
+        </section>
+
+        <section class="config-section">
+            <h2>运行模式</h2>
+            <div class="form-group">
+                <label>模式</label>
+                <select id="mode">
+                    <option value="client">客户端</option>
+                    <option value="server">服务端</option>
+                </select>
+            </div>
+        </section>
+
+        <section class="config-section" id="client-config">
+            <h2>客户端配置</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>服务器地址</label>
+                    <input type="text" id="remote_addr" placeholder="example.com">
+                </div>
+                <div class="form-group">
+                    <label>服务器端口</label>
+                    <input type="number" id="remote_port" value="443">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>本地地址</label>
+                    <input type="text" id="local_addr" value="127.0.0.1">
+                </div>
+                <div class="form-group">
+                    <label>本地端口</label>
+                    <input type="number" id="local_port" value="1080">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>密码</label>
+                <div class="input-with-btn">
+                    <input type="text" id="password" placeholder="Trojan 密码">
+                    <button class="btn btn-small" id="btn-gen-pass">生成</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>SNI (服务器名称)</label>
+                <input type="text" id="sni" placeholder="域名">
+            </div>
+        </section>
+
+        <section class="config-section" id="server-config" style="display:none">
+            <h2>服务端配置</h2>
+            <div class="form-group">
+                <label>监听端口</label>
+                <input type="number" id="server_port" value="443">
+            </div>
+            <div class="form-group">
+                <label>密码</label>
+                <div class="input-with-btn">
+                    <input type="text" id="server_password" placeholder="Trojan 密码">
+                    <button class="btn btn-small" id="btn-gen-pass-server">生成</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>SSL 证书路径</label>
+                <input type="text" id="ssl_cert" placeholder="/path/to/cert.pem">
+            </div>
+            <div class="form-group">
+                <label>SSL 密钥路径</label>
+                <input type="text" id="ssl_key" placeholder="/path/to/key.pem">
+            </div>
+            <div class="form-group">
+                <label>SNI</label>
+                <input type="text" id="server_sni" placeholder="域名">
+            </div>
+        </section>
+
+        <section class="action-section">
+            <button class="btn btn-primary" id="btn-save">保存配置</button>
+            <button class="btn btn-secondary" id="btn-test">测试配置</button>
+        </section>
+
+        <section class="logs-section">
+            <h2>日志</h2>
+            <div class="logs-container" id="logs-container">
+                <pre id="logs-output">加载中...</pre>
+            </div>
+            <button class="btn btn-small" id="btn-refresh-logs">刷新日志</button>
+        </section>
+    </div>
+
+    <script src="/js/clawui.js"></script>
+    <script>
+        const API = '/api/trojan';
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        async function checkStatus() {
+            try {
+                const res = await fetch(`${API}/status`);
+                const data = await res.json();
+                const indicator = document.getElementById('status-indicator');
+                const details = document.getElementById('status-details');
+
+                if (data.running) {
+                    indicator.innerHTML = '<span class="status-dot running"></span><span class="status-text">运行中</span>';
+                    details.innerHTML = `<p>运行时间: ${data.uptime || '-'}</p>`;
+                } else {
+                    indicator.innerHTML = '<span class="status-dot stopped"></span><span class="status-text">已停止</span>';
+                    details.innerHTML = '<p>Trojan 未运行</p>';
+                }
+
+                document.getElementById('traffic-rx').textContent = formatBytes(data.rx || 0);
+                document.getElementById('traffic-tx').textContent = formatBytes(data.tx || 0);
+            } catch (e) {
+                document.getElementById('status-indicator').innerHTML = '<span class="status-dot error"></span><span class="status-text">获取状态失败</span>';
+            }
+        }
+
+        async function sendAction(action) {
+            try {
+                const res = await fetch(`${API}/${action}`, { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    showToast('操作成功', 'success');
+                    checkStatus();
+                } else {
+                    showToast(data.message || '操作失败', 'error');
+                }
+            } catch (e) {
+                showToast('请求失败', 'error');
+            }
+        }
+
+        async function generatePassword(targetId) {
+            try {
+                const res = await fetch(`${API}/generate-password`);
+                const data = await res.json();
+                document.getElementById(targetId).value = data.password;
+            } catch (e) {
+                showToast('生成密码失败', 'error');
+            }
+        }
+
+        async function saveConfig() {
+            const mode = document.getElementById('mode').value;
+            const config = { mode };
+
+            if (mode === 'client') {
+                config.remote_addr = document.getElementById('remote_addr').value;
+                config.remote_port = parseInt(document.getElementById('remote_port').value);
+                config.local_addr = document.getElementById('local_addr').value;
+                config.local_port = parseInt(document.getElementById('local_port').value);
+                config.password = document.getElementById('password').value;
+                config.sni = document.getElementById('sni').value || config.remote_addr;
+            } else {
+                config.remote_port = parseInt(document.getElementById('server_port').value);
+                config.password = document.getElementById('server_password').value;
+                config.ssl_cert = document.getElementById('ssl_cert').value;
+                config.ssl_key = document.getElementById('ssl_key').value;
+                config.sni = document.getElementById('server_sni').value;
+            }
+
+            try {
+                const res = await fetch(`${API}/config`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
+                });
+                const data = await res.json();
+                showToast(data.success ? '配置已保存' : '保存失败', data.success ? 'success' : 'error');
+            } catch (e) {
+                showToast('请求失败', 'error');
+            }
+        }
+
+        async function testConfig() {
+            try {
+                const res = await fetch(`${API}/test`);
+                const data = await res.json();
+                showToast(data.message, data.success ? 'success' : 'error');
+            } catch (e) {
+                showToast('测试失败', 'error');
+            }
+        }
+
+        async function loadLogs() {
+            try {
+                const res = await fetch(`${API}/logs/50`);
+                document.getElementById('logs-output').textContent = await res.text();
+            } catch (e) {
+                document.getElementById('logs-output').textContent = '加载日志失败';
+            }
+        }
+
+        document.getElementById('btn-start').onclick = () => sendAction('start');
+        document.getElementById('btn-stop').onclick = () => sendAction('stop');
+        document.getElementById('btn-restart').onclick = () => sendAction('restart');
+        document.getElementById('btn-gen-pass').onclick = () => generatePassword('password');
+        document.getElementById('btn-gen-pass-server').onclick = () => generatePassword('server_password');
+        document.getElementById('btn-save').onclick = saveConfig;
+        document.getElementById('btn-test').onclick = testConfig;
+        document.getElementById('btn-refresh-logs').onclick = loadLogs;
+
+        document.getElementById('mode').onchange = function() {
+            const isClient = this.value === 'client';
+            document.getElementById('client-config').style.display = isClient ? 'block' : 'none';
+            document.getElementById('server-config').style.display = isClient ? 'none' : 'block';
+        };
+
+        checkStatus();
+        loadLogs();
+        setInterval(checkStatus, 5000);
+    </script>
+</body>
+</html>

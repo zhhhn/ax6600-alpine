@@ -1,0 +1,11 @@
+{
+  "id": "clawui-app-trojan",
+  "name": "Trojan",
+  "version": "1.0.0",
+  "description": "Trojan TLS 伪装代理",
+  "icon": "shield-lock",
+  "category": "proxy",
+  "author": "ClawUI",
+  "permissions": ["network", "process"],
+  "dependencies": ["trojan"]
+}

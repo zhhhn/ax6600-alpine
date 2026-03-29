@@ -64,14 +64,21 @@ build_app() {
     cp -r "$app_dir"/* "$build_dir/"
     
     # Build APKBUILD if not exists
+    # Determine package name - remove duplicate prefix if present
+    local pkg_name="$app_id"
+    case "$pkg_name" in
+        clawui-app-*) ;;
+        *) pkg_name="clawui-app-$pkg_name" ;;
+    esac
+    
     if [ ! -f "$build_dir/APKBUILD" ]; then
         cat > "$build_dir/APKBUILD" << EOF
 # ClawUI $app_name_display App
-pkgname=clawui-app-$app_id
+pkgname=$pkg_name
 pkgver=$app_version
 pkgrel=1
 pkgdesc="ClawUI $app_name_display 应用"
-url="https://github.com/clawui/clawui-app-$app_id"
+url="https://github.com/clawui/$pkg_name"
 arch="noarch"
 license="MIT"
 depends="clawui"
@@ -84,8 +91,9 @@ package() {
 EOF
     fi
     
-    # Create tarball
-    local tarball="$OUTPUT_DIR/clawui-app-$app_id-$app_version.tar.gz"
+    # Create tarball - use app_id directly as it may already contain prefix
+    local tarball_name="$app_id"
+    local tarball="$OUTPUT_DIR/$tarball_name-$app_version.tar.gz"
     tar -czf "$tarball" -C "$build_dir" .
     
     log_info "  Built: $tarball"

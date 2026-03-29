@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xray - ClawUI</title>
+    <link rel="stylesheet" href="/css/clawui.css">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <h1>⚡ Xray 代理</h1>
+            <p class="app-desc">多协议代理 (VLESS/VMess/Trojan)</p>
+        </header>
+
+        <section class="status-section">
+            <div class="status-card" id="status-card">
+                <div class="status-indicator" id="status-indicator">
+                    <span class="status-dot"></span>
+                    <span class="status-text">检查中...</span>
+                </div>
+                <div class="status-details" id="status-details"></div>
+            </div>
+            <div class="control-buttons">
+                <button class="btn btn-start" id="btn-start">启动</button>
+                <button class="btn btn-stop" id="btn-stop">停止</button>
+                <button class="btn btn-restart" id="btn-restart">重启</button>
+            </div>
+        </section>
+
+        <section class="config-section">
+            <h2>运行模式</h2>
+            <div class="form-group">
+                <label>模式</label>
+                <select id="mode">
+                    <option value="client">客户端</option>
+                    <option value="server">服务端</option>
+                </select>
+            </div>
+        </section>
+
+        <section class="config-section" id="client-config">
+            <h2>客户端配置</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>服务器地址</label>
+                    <input type="text" id="server" placeholder="example.com">
+                </div>
+                <div class="form-group">
+                    <label>服务器端口</label>
+                    <input type="number" id="server_port" value="443">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>UUID</label>
+                    <div class="input-with-btn">
+                        <input type="text" id="uuid" placeholder="点击生成">
+                        <button class="btn btn-small" id="btn-gen-uuid">生成</button>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>协议</label>
+                <select id="protocol">
+                    <option value="vless">VLESS</option>
+                    <option value="vmess">VMess</option>
+                    <option value="trojan">Trojan</option>
+                </select>
+            </div>
+        </section>
+
+        <section class="config-section" id="server-config" style="display:none">
+            <h2>服务端配置</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>监听端口</label>
+                    <input type="number" id="listen_port" value="443">
+                </div>
+                <div class="form-group">
+                    <label>协议</label>
+                    <select id="server_protocol">
+                        <option value="vless">VLESS</option>
+                        <option value="vmess">VMess</option>
+                        <option value="trojan">Trojan</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>用户 UUID</label>
+                <div class="input-with-btn">
+                    <input type="text" id="server_uuid" placeholder="点击生成">
+                    <button class="btn btn-small" id="btn-gen-uuid-server">生成</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="action-section">
+            <button class="btn btn-primary" id="btn-save">保存配置</button>
+            <button class="btn btn-secondary" id="btn-test">测试配置</button>
+        </section>
+
+        <section class="logs-section">
+            <h2>日志</h2>
+            <div class="logs-container" id="logs-container">
+                <pre id="logs-output">加载中...</pre>
+            </div>
+            <button class="btn btn-small" id="btn-refresh-logs">刷新日志</button>
+        </section>
+    </div>
+
+    <script src="/js/clawui.js"></script>
+    <script>
+        const API = '/api/xray';
+
+        async function checkStatus() {
+            try {
+                const res = await fetch(`${API}/status`);
+                const data = await res.json();
+                const indicator = document.getElementById('status-indicator');
+                const details = document.getElementById('status-details');
+
+                if (data.running) {
+                    indicator.innerHTML = '<span class="status-dot running"></span><span class="status-text">运行中</span>';
+                    details.innerHTML = `
+                        <p>运行时间: ${data.uptime || '-'}</p>
+                        <p>连接数: ${data.connections || 0}</p>
+                    `;
+                } else {
+                    indicator.innerHTML = '<span class="status-dot stopped"></span><span class="status-text">已停止</span>';
+                    details.innerHTML = '<p>Xray 未运行</p>';
+                }
+            } catch (e) {
+                document.getElementById('status-indicator').innerHTML = '<span class="status-dot error"></span><span class="status-text">获取状态失败</span>';
+            }
+        }
+
+        async function sendAction(action) {
+            try {
+                const res = await fetch(`${API}/${action}`, { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    showToast('操作成功', 'success');
+                    checkStatus();
+                } else {
+                    showToast(data.message || '操作失败', 'error');
+                }
+            } catch (e) {
+                showToast('请求失败', 'error');
+            }
+        }
+
+        async function generateUUID(targetId) {
+            try {
+                const res = await fetch(`${API}/generate-uuid`);
+                const data = await res.json();
+                document.getElementById(targetId).value = data.uuid;
+            } catch (e) {
+                showToast('生成UUID失败', 'error');
+            }
+        }
+
+        async function saveConfig() {
+            const mode = document.getElementById('mode').value;
+            const config = {
+                mode: mode,
+                protocol: mode === 'client' ? document.getElementById('protocol').value : document.getElementById('server_protocol').value
+            };
+
+            if (mode === 'client') {
+                config.server = document.getElementById('server').value;
+                config.server_port = parseInt(document.getElementById('server_port').value);
+                config.uuid = document.getElementById('uuid').value;
+            } else {
+                config.listen_port = parseInt(document.getElementById('listen_port').value);
+                config.uuid = document.getElementById('server_uuid').value;
+            }
+
+            try {
+                const res = await fetch(`${API}/config`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast('配置已保存', 'success');
+                } else {
+                    showToast('保存失败', 'error');
+                }
+            } catch (e) {
+                showToast('请求失败', 'error');
+            }
+        }
+
+        async function testConfig() {
+            try {
+                const res = await fetch(`${API}/test`);
+                const data = await res.json();
+                showToast(data.message, data.success ? 'success' : 'error');
+            } catch (e) {
+                showToast('测试失败', 'error');
+            }
+        }
+
+        async function loadLogs() {
+            try {
+                const res = await fetch(`${API}/logs/50`);
+                document.getElementById('logs-output').textContent = await res.text();
+            } catch (e) {
+                document.getElementById('logs-output').textContent = '加载日志失败';
+            }
+        }
+
+        // 事件绑定
+        document.getElementById('btn-start').onclick = () => sendAction('start');
+        document.getElementById('btn-stop').onclick = () => sendAction('stop');
+        document.getElementById('btn-restart').onclick = () => sendAction('restart');
+        document.getElementById('btn-gen-uuid').onclick = () => generateUUID('uuid');
+        document.getElementById('btn-gen-uuid-server').onclick = () => generateUUID('server_uuid');
+        document.getElementById('btn-save').onclick = saveConfig;
+        document.getElementById('btn-test').onclick = testConfig;
+        document.getElementById('btn-refresh-logs').onclick = loadLogs;
+
+        document.getElementById('mode').onchange = function() {
+            const isClient = this.value === 'client';
+            document.getElementById('client-config').style.display = isClient ? 'block' : 'none';
+            document.getElementById('server-config').style.display = isClient ? 'none' : 'block';
+        };
+
+        // 初始化
+        checkStatus();
+        loadLogs();
+        setInterval(checkStatus, 5000);
+    </script>
+</body>
+</html>

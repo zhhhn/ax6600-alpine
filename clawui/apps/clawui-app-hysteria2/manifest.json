@@ -1,0 +1,11 @@
+{
+  "id": "clawui-app-hysteria2",
+  "name": "Hysteria2",
+  "version": "1.0.0",
+  "description": "Hysteria2 QUIC 高速代理",
+  "icon": "bolt",
+  "category": "proxy",
+  "author": "ClawUI",
+  "permissions": ["network", "process"],
+  "dependencies": ["hysteria"]
+}

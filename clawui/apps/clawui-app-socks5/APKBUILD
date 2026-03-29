@@ -1,0 +1,18 @@
+# ClawUI App: SOCKS5 Server - APKBUILD
+pkgname=clawui-app-socks5
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management for SOCKS5 proxy server"
+arch="noarch"
+license="MIT"
+depends="clawui dante-server"
+source=""
+
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-socks5"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-socks5/"
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-socks5/api"
+    cp "$srcdir"/api/handler.sh "$pkgdir/usr/share/clawui/apps/clawui-app-socks5/api/"
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-socks5/api/handler.sh"
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-socks5/"
+}

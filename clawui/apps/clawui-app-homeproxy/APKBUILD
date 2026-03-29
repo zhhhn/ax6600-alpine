@@ -1,0 +1,18 @@
+# ClawUI App: HomeProxy - APKBUILD
+pkgname=clawui-app-homeproxy
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management for transparent proxy gateway"
+arch="noarch"
+license="MIT"
+depends="clawui iptables ipset"
+source=""
+
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-homeproxy"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-homeproxy/"
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-homeproxy/api"
+    cp "$srcdir"/api/handler.sh "$pkgdir/usr/share/clawui/apps/clawui-app-homeproxy/api/"
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-homeproxy/api/handler.sh"
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-homeproxy/"
+}

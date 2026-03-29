@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hysteria2 - ClawUI</title>
+    <link rel="stylesheet" href="/css/clawui.css">
+    <style>
+        .speed-slider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .speed-slider input[type="range"] {
+            flex: 1;
+        }
+        .speed-value {
+            min-width: 80px;
+            text-align: right;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+        }
+        .stat-card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 12px;
+        }
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+        .stat-value {
+            font-size: 20px;
+            font-weight: 500;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <h1>⚡ Hysteria2</h1>
+            <p class="app-desc">QUIC 高速代理</p>
+        </header>
+
+        <section class="status-section">
+            <div class="status-card" id="status-card">
+                <div class="status-indicator" id="status-indicator">
+                    <span class="status-dot"></span>
+                    <span class="status-text">检查中...</span>
+                </div>
+                <div class="status-details" id="status-details"></div>
+            </div>
+            <div class="stats-grid" id="stats-grid" style="display:none">
+                <div class="stat-card">
+                    <div class="stat-label">下载流量</div>
+                    <div class="stat-value" id="stat-download">0 MB</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">上传流量</div>
+                    <div class="stat-value" id="stat-upload">0 MB</div>
+                </div>
+            </div>
+            <div class="control-buttons">
+                <button class="btn btn-start" id="btn-start">启动</button>
+                <button class="btn btn-stop" id="btn-stop">停止</button>
+                <button class="btn btn-restart" id="btn-restart">重启</button>
+                <button class="btn btn-secondary" id="btn-test">测试连接</button>
+            </div>
+        </section>
+
+        <section class="config-section">
+            <h2>运行模式</h2>
+            <div class="form-group">
+                <label>模式</label>
+                <select id="mode">
+                    <option value="client">客户端</option>
+                    <option value="server">服务端</option>
+                </select>
+            </div>
+        </section>
+
+        <!-- 客户端配置 -->
+        <section class="config-section" id="client-config">
+            <h2>客户端配置</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>服务器地址</label>
+                    <input type="text" id="server" placeholder="example.com">
+                </div>
+                <div class="form-group">
+                    <label>端口</label>
+                    <input type="number" id="client_port" value="443">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>密码</label>
+                    <input type="text" id="client_password" placeholder="连接密码">
+                </div>
+                <div class="form-group">
+                    <label>混淆密码</label>
+                    <div class="input-with-btn">
+                        <input type="text" id="client_obfs" placeholder="可选">
+                        <button class="btn btn-small" id="btn-gen-obfs-client">生成</button>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>SNI</label>
+                <input type="text" id="sni" placeholder="域名 (与服务器地址相同)">
+            </div>
+            
+            <h3 style="margin-top: 16px;">带宽设置</h3>
+            <div class="form-group">
+                <label>上行带宽</label>
+                <div class="speed-slider">
+                    <input type="range" id="client_up_speed" min="10" max="1000" value="100">
+                    <span class="speed-value"><span id="client_up_value">100</span> Mbps</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>下行带宽</label>
+                <div class="speed-slider">
+                    <input type="range" id="client_down_speed" min="10" max="1000" value="100">
+                    <span class="speed-value"><span id="client_down_value">100</span> Mbps</span>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 16px;">本地代理</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>SOCKS5 端口</label>
+                    <input type="number" id="socks_port" value="1080">
+                </div>
+                <div class="form-group">
+                    <label>HTTP 端口</label>
+                    <input type="number" id="http_port" value="8080">
+                </div>
+            </div>
+        </section>
+
+        <!-- 服务端配置 -->
+        <section class="config-section" id="server-config" style="display:none">
+            <h2>服务端配置</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>监听地址</label>
+                    <input type="text" id="listen" value="0.0.0.0">
+                </div>
+                <div class="form-group">
+                    <label>端口</label>
+                    <input type="number" id="server_port" value="443">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>密码</label>
+                    <div class="input-with-btn">
+                        <input type="text" id="server_password" placeholder="用户密码">
+                        <button class="btn btn-small" id="btn-gen-pass-server">生成</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>混淆密码</label>
+                    <div class="input-with-btn">
+                        <input type="text" id="server_obfs" placeholder="可选">
+                        <button class="btn btn-small" id="btn-gen-obfs-server">生成</button>
+                    </div>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>TLS 证书</label>
+                    <input type="text" id="tls_cert" placeholder="/path/to/cert.pem">
+                </div>
+                <div class="form-group">
+                    <label>TLS 密钥</label>
+                    <input type="text" id="tls_key" placeholder="/path/to/key.pem">
+                </div>
+            </div>
+            
+            <h3 style="margin-top: 16px;">带宽设置</h3>
+            <div class="form-group">
+                <label>上行带宽</label>
+                <div class="speed-slider">
+                    <input type="range" id="server_up_speed" min="10" max="1000" value="100">
+                    <span class="speed-value"><span id="server_up_value">100</span> Mbps</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>下行带宽</label>
+                <div class="speed-slider">
+                    <input type="range" id="server_down_speed" min="10" max="1000" value="100">
+                    <span class="speed-value"><span id="server_down_value">100</span> Mbps</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>用户管理</label>
+                <button class="btn btn-secondary" id="btn-users">查看用户</button>
+                <div id="users-list" style="margin-top: 8px;"></div>
+            </div>
+        </section>
+
+        <section class="action-section">
+            <button class="btn btn-primary" id="btn-save">保存配置</button>
+        </section>
+
+        <section class="logs-section">
+            <h2>日志</h2>
+            <div class="logs-container" id="logs-container">
+                <pre id="logs-output">加载中...</pre>
+            </div>
+            <button class="btn btn-small" id="btn-refresh-logs">刷新日志</button>
+        </section>
+    </div>
+
+    <script src="/js/clawui.js"></script>
+    <script>
+        const API = '/api/hysteria2';
+
+        function formatMB(bytes) {
+            return (bytes / 1024 / 1024).toFixed(2) + ' MB';
+        }
+
+        async function checkStatus() {
+            try {
+                const res = await fetch(`${API}/status`);
+                const data = await res.json();
+                const indicator = document.getElementById('status-indicator');
+                const details = document.getElementById('status-details');
+                const statsGrid = document.getElementById('stats-grid');
+
+                if (data.running) {
+                    indicator.innerHTML = '<span class="status-dot running"></span><span class="status-text">运行中</span>';
+                    details.innerHTML = `<p>运行时间: ${data.uptime || '-'}</p><p>模式: ${data.mode || 'unknown'}</p>`;
+                    
+                    // 加载统计
+                    if (data.mode === 'server') {
+                        statsGrid.style.display = 'grid';
+                        loadStats();
+                    } else {
+                        statsGrid.style.display = 'none';
+                    }
+                } else {
+                    indicator.innerHTML = '<span class="status-dot stopped"></span><span class="status-text">已停止</span>';
+                    details.innerHTML = '<p>Hysteria2 未运行</p>';
+                    statsGrid.style.display = 'none';
+                }
+            } catch (e) {
+                document.getElementById('status-indicator').innerHTML = '<span class="status-dot error"></span><span class="status-text">获取状态失败</span>';
+            }
+        }
+
+        async function loadStats() {
+            try {
+                const res = await fetch(`${API}/stats`);
+                const data = await res.json();
+                if (data.rx && data.tx) {
+                    document.getElementById('stat-download').textContent = formatMB(data.rx);
+                    document.getElementById('stat-upload').textContent = formatMB(data.tx);
+                }
+            } catch (e) {}
+        }
+
+        async function sendAction(action) {
+            try {
+                const res = await fetch(`${API}/${action}`, { method: 'POST' });
+                const data = await res.json();
+                showToast(data.success ? '操作成功' : '操作失败', data.success ? 'success' : 'error');
+                checkStatus();
+            } catch (e) {
+                showToast('请求失败', 'error');
+            }
+        }
+
+        async function generatePassword(targetId) {
+            try {
+                const res = await fetch(`${API}/generate-password`);
+                const data = await res.json();
+                document.getElementById(targetId).value = data.password;
+            } catch (e) {
+                showToast('生成失败', 'error');
+            }
+        }
+
+        async function generateObfs(targetId) {
+            try {
+                const res = await fetch(`${API}/generate-obfs`);
+                const data = await res.json();
+                document.getElementById(targetId).value = data.obfs;
+            } catch (e) {
+                showToast('生成失败', 'error');
+            }
+        }
+
+        async function saveConfig() {
+            const mode = document.getElementById('mode').value;
+            
+            if (mode === 'client') {
+                const config = {
+                    server: document.getElementById('server').value,
+                    port: parseInt(document.getElementById('client_port').value),
+                    password: document.getElementById('client_password').value,
+                    obfs: document.getElementById('client_obfs').value,
+                    sni: document.getElementById('sni').value || document.getElementById('server').value,
+                    up_speed: parseInt(document.getElementById('client_up_speed').value),
+                    down_speed: parseInt(document.getElementById('client_down_speed').value),
+                    socks_port: parseInt(document.getElementById('socks_port').value),
+                    http_port: parseInt(document.getElementById('http_port').value)
+                };
+                
+                if (!config.server || !config.password) {
+                    showToast('请填写服务器和密码', 'error');
+                    return;
+                }
+
+                try {
+                    const res = await fetch(`${API}/config-client`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(config)
+                    });
+                    const data = await res.json();
+                    showToast(data.success ? '配置已保存' : '保存失败', data.success ? 'success' : 'error');
+                } catch (e) {
+                    showToast('请求失败', 'error');
+                }
+            } else {
+                const config = {
+                    listen: document.getElementById('listen').value,
+                    port: parseInt(document.getElementById('server_port').value),
+                    password: document.getElementById('server_password').value,
+                    obfs: document.getElementById('server_obfs').value,
+                    tls_cert: document.getElementById('tls_cert').value,
+                    tls_key: document.getElementById('tls_key').value,
+                    up_speed: parseInt(document.getElementById('server_up_speed').value),
+                    down_speed: parseInt(document.getElementById('server_down_speed').value)
+                };
+                
+                if (!config.password || !config.tls_cert || !config.tls_key) {
+                    showToast('请填写密码和TLS证书', 'error');
+                    return;
+                }
+
+                try {
+                    const res = await fetch(`${API}/config-server`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(config)
+                    });
+                    const data = await res.json();
+                    showToast(data.success ? '配置已保存' : '保存失败', data.success ? 'success' : 'error');
+                } catch (e) {
+                    showToast('请求失败', 'error');
+                }
+            }
+        }
+
+        async function testConnection() {
+            showToast('正在测试...', 'info');
+            try {
+                const res = await fetch(`${API}/test`);
+                const data = await res.json();
+                showToast(data.message, data.success ? 'success' : 'error');
+            } catch (e) {
+                showToast('测试失败', 'error');
+            }
+        }
+
+        async function loadLogs() {
+            try {
+                const res = await fetch(`${API}/logs/50`);
+                document.getElementById('logs-output').textContent = await res.text();
+            } catch (e) {
+                document.getElementById('logs-output').textContent = '加载日志失败';
+            }
+        }
+
+        // 滑块实时更新
+        document.getElementById('client_up_speed').oninput = function() {
+            document.getElementById('client_up_value').textContent = this.value;
+        };
+        document.getElementById('client_down_speed').oninput = function() {
+            document.getElementById('client_down_value').textContent = this.value;
+        };
+        document.getElementById('server_up_speed').oninput = function() {
+            document.getElementById('server_up_value').textContent = this.value;
+        };
+        document.getElementById('server_down_speed').oninput = function() {
+            document.getElementById('server_down_value').textContent = this.value;
+        };
+
+        // 模式切换
+        document.getElementById('mode').onchange = function() {
+            const isClient = this.value === 'client';
+            document.getElementById('client-config').style.display = isClient ? 'block' : 'none';
+            document.getElementById('server-config').style.display = isClient ? 'none' : 'block';
+        };
+
+        // 事件绑定
+        document.getElementById('btn-start').onclick = () => sendAction('start');
+        document.getElementById('btn-stop').onclick = () => sendAction('stop');
+        document.getElementById('btn-restart').onclick = () => sendAction('restart');
+        document.getElementById('btn-test').onclick = testConnection;
+        document.getElementById('btn-save').onclick = saveConfig;
+        document.getElementById('btn-gen-obfs-client').onclick = () => generateObfs('client_obfs');
+        document.getElementById('btn-gen-pass-server').onclick = () => generatePassword('server_password');
+        document.getElementById('btn-gen-obfs-server').onclick = () => generateObfs('server_obfs');
+        document.getElementById('btn-refresh-logs').onclick = loadLogs;
+
+        checkStatus();
+        loadLogs();
+        setInterval(checkStatus, 5000);
+    </script>
+</body>
+</html>

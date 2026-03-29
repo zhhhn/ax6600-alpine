@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clash - ClawUI</title>
+    <link rel="stylesheet" href="/css/clawui.css">
+    <style>
+        .proxy-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+        }
+        .proxy-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .proxy-card:hover {
+            border-color: var(--primary-color);
+        }
+        .proxy-card.selected {
+            border-color: var(--primary-color);
+            background: var(--primary-light);
+        }
+        .proxy-name {
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+        .proxy-delay {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .proxy-delay.good { color: #10b981; }
+        .proxy-delay.medium { color: #f59e0b; }
+        .proxy-delay.bad { color: #ef4444; }
+        .mode-buttons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .mode-btn {
+            padding: 8px 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--card-bg);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .mode-btn.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        .traffic-bar {
+            display: flex;
+            gap: 16px;
+            margin: 12px 0;
+        }
+        .traffic-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .traffic-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        .traffic-dot.up { background: #10b981; }
+        .traffic-dot.down { background: #3b82f6; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <h1>🔀 Clash 代理</h1>
+            <p class="app-desc">多节点规则代理</p>
+        </header>
+
+        <section class="status-section">
+            <div class="status-card" id="status-card">
+                <div class="status-indicator" id="status-indicator">
+                    <span class="status-dot"></span>
+                    <span class="status-text">检查中...</span>
+                </div>
+                <div class="status-details" id="status-details"></div>
+            </div>
+            <div class="mode-buttons" id="mode-buttons">
+                <button class="mode-btn" data-mode="rule">规则模式</button>
+                <button class="mode-btn" data-mode="global">全局代理</button>
+                <button class="mode-btn" data-mode="direct">直连模式</button>
+            </div>
+            <div class="traffic-bar">
+                <div class="traffic-item">
+                    <span class="traffic-dot down"></span>
+                    <span>↓ <span id="traffic-down">0 B/s</span></span>
+                </div>
+                <div class="traffic-item">
+                    <span class="traffic-dot up"></span>
+                    <span>↑ <span id="traffic-up">0 B/s</span></span>
+                </div>
+            </div>
+            <div class="control-buttons">
+                <button class="btn btn-start" id="btn-start">启动</button>
+                <button class="btn btn-stop" id="btn-stop">停止</button>
+                <button class="btn btn-restart" id="btn-restart">重启</button>
+                <button class="btn btn-secondary" id="btn-delay-all">测速全部</button>
+            </div>
+        </section>
+
+        <section class="config-section">
+            <h2>代理节点</h2>
+            <div class="proxy-grid" id="proxy-list">
+                <p>加载中...</p>
+            </div>
+        </section>
+
+        <section class="config-section">
+            <h2>订阅管理</h2>
+            <div class="form-group">
+                <label>订阅链接</label>
+                <div class="input-with-btn">
+                    <input type="text" id="sub-url" placeholder="https://example.com/subscribe">
+                    <button class="btn btn-primary" id="btn-update-sub">更新订阅</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="config-section">
+            <h2>连接管理</h2>
+            <div class="control-buttons">
+                <button class="btn btn-secondary" id="btn-connections">查看连接</button>
+                <button class="btn btn-danger" id="btn-close-all">关闭所有连接</button>
+            </div>
+            <div id="connections-list" style="margin-top: 12px; max-height: 300px; overflow-y: auto;"></div>
+        </section>
+
+        <section class="logs-section">
+            <h2>日志</h2>
+            <div class="logs-container" id="logs-container">
+                <pre id="logs-output">加载中...</pre>
+            </div>
+            <button class="btn btn-small" id="btn-refresh-logs">刷新日志</button>
+        </section>
+    </div>
+
+    <script src="/js/clawui.js"></script>
+    <script>
+        const API = '/api/clash';
+        let currentMode = 'rule';
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+
+        function formatDelay(delay) {
+            if (!delay || delay === 0) return '超时';
+            return delay + ' ms';
+        }
+
+        function getDelayClass(delay) {
+            if (!delay || delay === 0) return 'bad';
+            if (delay < 200) return 'good';
+            if (delay < 500) return 'medium';
+            return 'bad';
+        }
+
+        async function checkStatus() {
+            try {
+                const res = await fetch(`${API}/status`);
+                const data = await res.json();
+                const indicator = document.getElementById('status-indicator');
+                const details = document.getElementById('status-details');
+
+                if (data.running) {
+                    indicator.innerHTML = '<span class="status-dot running"></span><span class="status-text">运行中</span>';
+                    details.innerHTML = `<p>运行时间: ${data.uptime || '-'}</p><p>模式: ${data.mode || 'rule'}</p>`;
+                    currentMode = data.mode || 'rule';
+                    updateModeButtons();
+                } else {
+                    indicator.innerHTML = '<span class="status-dot stopped"></span><span class="status-text">已停止</span>';
+                    details.innerHTML = '<p>Clash 未运行</p>';
+                }
+            } catch (e) {
+                document.getElementById('status-indicator').innerHTML = '<span class="status-dot error"></span><span class="status-text">获取状态失败</span>';
+            }
+        }
+
+        function updateModeButtons() {
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.mode === currentMode);
+            });
+        }
+
+        async function setMode(mode) {
+            try {
+                const res = await fetch(`${API}/proxy-mode`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mode })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    currentMode = mode;
+                    updateModeButtons();
+                    showToast('模式已切换', 'success');
+                }
+            } catch (e) {
+                showToast('切换失败', 'error');
+            }
+        }
+
+        async function loadProxies() {
+            try {
+                const res = await fetch(`${API}/proxies`);
+                const data = await res.json();
+                const container = document.getElementById('proxy-list');
+                
+                if (!data.proxies) {
+                    container.innerHTML = '<p>无法获取节点列表</p>';
+                    return;
+                }
+
+                // 找 PROXY 组
+                const proxyGroup = data.proxies['PROXY'] || data.proxies['proxy'] || Object.values(data.proxies)[0];
+                if (!proxyGroup || !proxyGroup.all) {
+                    container.innerHTML = '<p>未找到代理组</p>';
+                    return;
+                }
+
+                let html = '';
+                proxyGroup.all.forEach(name => {
+                    const proxy = data.proxies[name];
+                    const delay = proxy?.history?.[0]?.delay || 0;
+                    const isSelected = proxyGroup.now === name;
+                    html += `
+                        <div class="proxy-card ${isSelected ? 'selected' : ''}" data-name="${name}">
+                            <div class="proxy-name">${name}</div>
+                            <div class="proxy-delay ${getDelayClass(delay)}">${formatDelay(delay)}</div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+
+                // 绑定点击事件
+                container.querySelectorAll('.proxy-card').forEach(card => {
+                    card.onclick = () => selectProxy(card.dataset.name);
+                });
+            } catch (e) {
+                document.getElementById('proxy-list').innerHTML = '<p>加载失败</p>';
+            }
+        }
+
+        async function selectProxy(name) {
+            try {
+                const res = await fetch(`${API}/proxy-select`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ proxy: name, group: 'PROXY' })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    loadProxies();
+                    showToast('已切换到 ' + name, 'success');
+                }
+            } catch (e) {
+                showToast('切换失败', 'error');
+            }
+        }
+
+        async function delayAll() {
+            showToast('正在测速...', 'info');
+            try {
+                await fetch(`${API}/delay-all`);
+                setTimeout(loadProxies, 3000);
+            } catch (e) {
+                showToast('测速失败', 'error');
+            }
+        }
+
+        async function updateSubscription() {
+            const url = document.getElementById('sub-url').value;
+            if (!url) {
+                showToast('请输入订阅链接', 'error');
+                return;
+            }
+            try {
+                const res = await fetch(`${API}/subscription`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
+                const data = await res.json();
+                showToast(data.message || '更新完成', data.success ? 'success' : 'error');
+                if (data.success) {
+                    await fetch(`${API}/reload`, { method: 'POST' });
+                    setTimeout(loadProxies, 1000);
+                }
+            } catch (e) {
+                showToast('更新失败', 'error');
+            }
+        }
+
+        async function loadConnections() {
+            try {
+                const res = await fetch(`${API}/connections`);
+                const data = await res.json();
+                const container = document.getElementById('connections-list');
+                
+                if (!data.connections || data.connections.length === 0) {
+                    container.innerHTML = '<p style="color: var(--text-muted)">暂无连接</p>';
+                    return;
+                }
+
+                let html = '<table style="width:100%; font-size: 12px;"><tr><th>主机</th><th>网络</th><th>节点</th></tr>';
+                data.connections.slice(0, 20).forEach(conn => {
+                    html += `<tr>
+                        <td>${conn.metadata?.host || conn.metadata?.destinationIP || '-'}</td>
+                        <td>${conn.metadata?.network || '-'}</td>
+                        <td>${conn.chains?.[0] || '-'}</td>
+                    </tr>`;
+                });
+                html += '</table>';
+                container.innerHTML = html;
+            } catch (e) {
+                document.getElementById('connections-list').innerHTML = '<p>加载失败</p>';
+            }
+        }
+
+        async function closeAllConnections() {
+            if (!confirm('确定要关闭所有连接吗？')) return;
+            try {
+                await fetch(`${API}/close-all-connections`, { method: 'POST' });
+                showToast('已关闭所有连接', 'success');
+                loadConnections();
+            } catch (e) {
+                showToast('操作失败', 'error');
+            }
+        }
+
+        async function sendAction(action) {
+            try {
+                const res = await fetch(`${API}/${action}`, { method: 'POST' });
+                const data = await res.json();
+                showToast(data.success ? '操作成功' : '操作失败', data.success ? 'success' : 'error');
+                checkStatus();
+            } catch (e) {
+                showToast('请求失败', 'error');
+            }
+        }
+
+        async function loadLogs() {
+            try {
+                const res = await fetch(`${API}/logs/50`);
+                document.getElementById('logs-output').textContent = await res.text();
+            } catch (e) {
+                document.getElementById('logs-output').textContent = '加载日志失败';
+            }
+        }
+
+        // 事件绑定
+        document.getElementById('btn-start').onclick = () => sendAction('start');
+        document.getElementById('btn-stop').onclick = () => sendAction('stop');
+        document.getElementById('btn-restart').onclick = () => sendAction('restart');
+        document.getElementById('btn-delay-all').onclick = delayAll;
+        document.getElementById('btn-update-sub').onclick = updateSubscription;
+        document.getElementById('btn-connections').onclick = loadConnections;
+        document.getElementById('btn-close-all').onclick = closeAllConnections;
+        document.getElementById('btn-refresh-logs').onclick = loadLogs;
+
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.onclick = () => setMode(btn.dataset.mode);
+        });
+
+        // 初始化
+        checkStatus();
+        loadProxies();
+        loadLogs();
+        setInterval(checkStatus, 5000);
+    </script>
+</body>
+</html>

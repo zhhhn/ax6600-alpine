@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HomeProxy - ClawUI</title>
+    <link rel="stylesheet" href="/css/clawui.css">
+    <style>
+        .mode-selector {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .mode-btn {
+            padding: 12px 24px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--card-bg);
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        .mode-btn.active {
+            border-color: var(--primary-color);
+            background: var(--primary-light);
+        }
+        .mode-btn:hover {
+            border-color: var(--primary-color);
+        }
+        .node-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 12px;
+        }
+        .node-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+        }
+        .node-card.selected {
+            border-color: var(--primary-color);
+            background: var(--primary-light);
+        }
+        .rule-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .rule-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .rule-type {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .rule-type.direct { background: #10b981; color: white; }
+        .rule-type.proxy { background: #3b82f6; color: white; }
+        .rule-type.block { background: #ef4444; color: white; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <h1>🌐 HomeProxy</h1>
+            <p class="app-desc">透明代理网关</p>
+        </header>
+
+        <section class="status-section">
+            <div class="status-card" id="status-card">
+                <div class="status-indicator" id="status-indicator">
+                    <span class="status-dot"></span>
+                    <span class="status-text">检查中...</span>
+                </div>
+                <div class="status-details" id="status-details"></div>
+            </div>
+            <div class="control-buttons">
+                <button class="btn btn-start" id="btn-start">启用</button>
+                <button class="btn btn-stop" id="btn-stop">禁用</button>
+                <button class="btn btn-danger" id="btn-clear-rules">清空规则</button>
+            </div>
+        </section>
+
+        <section class="config-section">
+            <h2>全局模式</h2>
+            <div class="mode-selector" id="mode-selector">
+                <div class="mode-btn" data-mode="proxy">
+                    <strong>代理模式</strong>
+                    <p style="font-size: 12px; color: var(--text-muted)">所有流量通过代理</p>
+                </div>
+                <div class="mode-btn" data-mode="rule">
+                    <strong>规则模式</strong>
+                    <p style="font-size: 12px; color: var(--text-muted)">按规则分流</p>
+                </div>
+                <div class="mode-btn" data-mode="direct">
+                    <strong>直连模式</strong>
+                    <p style="font-size: 12px; color: var(--text-muted)">所有流量直连</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="config-section">
+            <h2>代理节点</h2>
+            <p style="color: var(--text-muted); margin-bottom: 12px;">选择透明代理使用的节点</p>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>代理端口</label>
+                    <input type="number" id="proxy_port" value="1080">
+                    <p style="font-size: 12px; color: var(--text-muted)">本地 SOCKS5 代理端口</p>
+                </div>
+                <div class="form-group">
+                    <label>默认节点</label>
+                    <select id="default_node">
+                        <option value="">自动选择</option>
+                    </select>
+                </div>
+            </div>
+            <div class="node-grid" id="nodes-list">
+                <p>加载中...</p>
+            </div>
+            <button class="btn btn-secondary" id="btn-add-node" style="margin-top: 12px;">添加节点</button>
+        </section>
+
+        <section class="config-section">
+            <h2>分流规则</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>IP/域名</label>
+                    <input type="text" id="rule_target" placeholder="例如: 192.168.1.1 或 example.com">
+                </div>
+                <div class="form-group">
+                    <label>处理方式</label>
+                    <select id="rule_type">
+                        <option value="direct">直连</option>
+                        <option value="proxy">代理</option>
+                        <option value="block">阻止</option>
+                    </select>
+                </div>
+            </div>
+            <button class="btn btn-primary" id="btn-add-rule">添加规则</button>
+            
+            <div class="rule-list" id="rules-list" style="margin-top: 16px;">
+                <p>加载中...</p>
+            </div>
+        </section>
+
+        <section class="config-section">
+            <h2>规则订阅</h2>
+            <div class="form-group">
+                <label>订阅链接</label>
+                <div class="input-with-btn">
+                    <input type="text" id="sub-url" placeholder="GFWList 或自定义规则列表">
+                    <button class="btn btn-primary" id="btn-import-rules">导入规则</button>
+                </div>
+            </div>
+            <p style="font-size: 12px; color: var(--text-muted)">支持: GFWList、自定义 IP/域名列表</p>
+        </section>
+
+        <section class="config-section">
+            <h2>DNS 设置</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>DNS 代理</label>
+                    <select id="dns_proxy">
+                        <option value="true">启用</option>
+                        <option value="false">禁用</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>DNS 服务器</label>
+                    <input type="text" id="dns_server" placeholder="8.8.8.8">
+                </div>
+            </div>
+            <button class="btn btn-secondary" id="btn-save-dns">保存 DNS 配置</button>
+        </section>
+
+        <section class="config-section">
+            <h2>测试工具</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>测试 IP</label>
+                    <input type="text" id="test_ip" placeholder="输入 IP 地址">
+                </div>
+                <div class="form-group">
+                    <button class="btn btn-secondary" id="btn-test-ip">查询分流</button>
+                </div>
+            </div>
+            <p id="test-result" style="margin-top: 8px;"></p>
+        </section>
+
+        <section class="logs-section">
+            <h2>状态统计</h2>
+            <div id="stats-info" style="background: var(--card-bg); padding: 12px; border-radius: 8px;">
+                <p>直连规则: <span id="stat-direct">0</span></p>
+                <p>代理规则: <span id="stat-proxy">0</span></p>
+                <p>阻止规则: <span id="stat-block">0</span></p>
+                <p>当前连接: <span id="stat-conns">0</span></p>
+            </div>
+        </section>
+    </div>
+
+    <script src="/js/clawui.js"></script>
+    <script>
+        const API = '/api/homeproxy';
+        let currentMode = 'rule';
+
+        async function checkStatus() {
+            try {
+                const res = await fetch(`${API}/status`);
+                const data = await res.json();
+                const indicator = document.getElementById('status-indicator');
+                const details = document.getElementById('status-details');
+
+                if (data.running) {
+                    indicator.innerHTML = '<span class="status-dot running"></span><span class="status-text">已启用</span>';
+                    details.innerHTML = `<p>当前节点: ${data.current_node || '自动'}</p>`;
+                } else {
+                    indicator.innerHTML = '<span class="status-dot stopped"></span><span class="status-text">已禁用</span>';
+                    details.innerHTML = '<p>透明代理未启用</p>';
+                }
+
+                // 更新统计
+                document.getElementById('stat-direct').textContent = data.direct_rules || 0;
+                document.getElementById('stat-proxy').textContent = data.proxy_rules || 0;
+                document.getElementById('stat-block').textContent = data.block_rules || 0;
+                document.getElementById('stat-conns').textContent = data.connections || 0;
+            } catch (e) {
+                document.getElementById('status-indicator').innerHTML = '<span class="status-dot error"></span><span class="status-text">获取状态失败</span>';
+            }
+        }
+
+        function updateModeButtons() {
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.mode === currentMode);
+            });
+        }
+
+        async function setMode(mode) {
+            try {
+                const res = await fetch(`${API}/set-mode`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mode })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    currentMode = mode;
+                    updateModeButtons();
+                    showToast('模式已切换', 'success');
+                    checkStatus();
+                }
+            } catch (e) {
+                showToast('切换失败', 'error');
+            }
+        }
+
+        async function loadNodes() {
+            try {
+                const res = await fetch(`${API}/nodes`);
+                const data = await res.json();
+                const container = document.getElementById('nodes-list');
+                const select = document.getElementById('default_node');
+
+                if (!data.nodes || data.nodes.length === 0) {
+                    container.innerHTML = '<p style="color: var(--text-muted)">暂无节点，请先在其他代理应用中配置</p>';
+                    select.innerHTML = '<option value="">自动选择</option>';
+                    return;
+                }
+
+                let html = '';
+                let options = '<option value="">自动选择</option>';
+
+                data.nodes.forEach(node => {
+                    options += `<option value="${node.name}">${node.name}</option>`;
+                    html += `<div class="node-card" data-name="${node.name}">
+                        <div><strong>${node.name}</strong></div>
+                        <div style="font-size: 12px; color: var(--text-muted)">${node.type} - ${node.server}:${node.port}</div>
+                    </div>`;
+                });
+
+                container.innerHTML = html;
+                select.innerHTML = options;
+
+                // 绑定选择
+                container.querySelectorAll('.node-card').forEach(card => {
+                    card.onclick = () => selectNode(card.dataset.name);
+                });
+            } catch (e) {
+                document.getElementById('nodes-list').innerHTML = '<p>加载失败</p>';
+            }
+        }
+
+        async function selectNode(name) {
+            document.querySelectorAll('.node-card').forEach(c => c.classList.remove('selected'));
+            document.querySelector(`.node-card[data-name="${name}"]`).classList.add('selected');
+            document.getElementById('default_node').value = name;
+
+            try {
+                await fetch(`${API}/set-default-node`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ node: name })
+                });
+                showToast('已选择节点: ' + name, 'success');
+            } catch (e) {}
+        }
+
+        async function loadRules() {
+            try {
+                const res = await fetch(`${API}/rules`);
+                const text = await res.text();
+                const container = document.getElementById('rules-list');
+
+                // 简单显示
+                if (text.trim() === '[]' || text.includes('No rules')) {
+                    container.innerHTML = '<p style="color: var(--text-muted)">暂无规则</p>';
+                    return;
+                }
+
+                // 解析规则
+                let html = '';
+                const lines = text.split('\n').filter(l => l.trim() && l.includes('{'));
+                lines.forEach(line => {
+                    try {
+                        const rule = JSON.parse(line.replace(/}\s*{/g, '},{').replace(/^/, '[').replace(/$/, ']'));
+                        if (Array.isArray(rule)) {
+                            rule.forEach(r => {
+                                const typeClass = r.type || 'proxy';
+                                html += `<div class="rule-item">
+                                    <span>${r.ip || r.domain || '-'}</span>
+                                    <span class="rule-type ${typeClass}">${r.type}</span>
+                                </div>`;
+                            });
+                        }
+                    } catch (e) {}
+                });
+
+                container.innerHTML = html || '<p style="color: var(--text-muted)">暂无规则</p>';
+            } catch (e) {
+                document.getElementById('rules-list').innerHTML = '<p>加载失败</p>';
+            }
+        }
+
+        async function addRule() {
+            const target = document.getElementById('rule_target').value;
+            const type = document.getElementById('rule_type').value;
+
+            if (!target) {
+                showToast('请输入 IP 或域名', 'error');
+                return;
+            }
+
+            const isIP = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/.test(target);
+            const rule = {
+                type,
+                [isIP ? 'ip' : 'domain']: target
+            };
+
+            try {
+                const res = await fetch(`${API}/add-rule`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(rule)
+                });
+                const data = await res.json();
+                showToast(data.success ? '规则已添加' : '添加失败', data.success ? 'success' : 'error');
+                if (data.success) {
+                    document.getElementById('rule_target').value = '';
+                    loadRules();
+                    checkStatus();
+                }
+            } catch (e) {
+                showToast('添加失败', 'error');
+            }
+        }
+
+        async function importRules() {
+            const url = document.getElementById('sub-url').value;
+            if (!url) {
+                showToast('请输入订阅链接', 'error');
+                return;
+            }
+
+            showToast('正在导入...', 'info');
+
+            try {
+                const res = await fetch(`${API}/import-rules`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
+                const data = await res.json();
+                showToast(data.success ? '规则导入完成' : '导入失败', data.success ? 'success' : 'error');
+                if (data.success) {
+                    loadRules();
+                    checkStatus();
+                }
+            } catch (e) {
+                showToast('导入失败', 'error');
+            }
+        }
+
+        async function clearRules() {
+            if (!confirm('确定清空所有分流规则吗？')) return;
+
+            try {
+                const res = await fetch(`${API}/clear-rules`, { method: 'POST' });
+                const data = await res.json();
+                showToast(data.success ? '规则已清空' : '操作失败', data.success ? 'success' : 'error');
+                if (data.success) {
+                    loadRules();
+                    checkStatus();
+                }
+            } catch (e) {
+                showToast('操作失败', 'error');
+            }
+        }
+
+        async function testIP() {
+            const ip = document.getElementById('test_ip').value;
+            if (!ip) {
+                showToast('请输入 IP', 'error');
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API}/test-ip/${ip}`);
+                const data = await res.json();
+                const resultEl = document.getElementById('test-result');
+                const typeClass = data.result || 'proxy';
+                resultEl.innerHTML = `<span class="rule-type ${typeClass}">${data.result}</span>`;
+            } catch (e) {
+                document.getElementById('test-result').textContent = '查询失败';
+            }
+        }
+
+        async function sendAction(action) {
+            try {
+                const res = await fetch(`${API}/${action}`, { method: 'POST' });
+                const data = await res.json();
+                showToast(data.message || (data.success ? '操作成功' : '操作失败'), data.success ? 'success' : 'error');
+                checkStatus();
+            } catch (e) {
+                showToast('请求失败', 'error');
+            }
+        }
+
+        async function saveConfig() {
+            const config = {
+                mode: currentMode,
+                proxy_port: parseInt(document.getElementById('proxy_port').value),
+                default_node: document.getElementById('default_node').value,
+                ipv6: false,
+                dns_proxy: document.getElementById('dns_proxy').value === 'true'
+            };
+
+            try {
+                const res = await fetch(`${API}/config`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
+                });
+                const data = await res.json();
+                showToast(data.success ? '配置已保存' : '保存失败', data.success ? 'success' : 'error');
+            } catch (e) {
+                showToast('请求失败', 'error');
+            }
+        }
+
+        async function saveDNS() {
+            const config = {
+                enabled: document.getElementById('dns_proxy').value === 'true',
+                server: document.getElementById('dns_server').value
+            };
+
+            try {
+                const res = await fetch(`${API}/dns-config`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
+                });
+                showToast('DNS 配置已保存', 'success');
+            } catch (e) {
+                showToast('保存失败', 'error');
+            }
+        }
+
+        // 事件绑定
+        document.getElementById('btn-start').onclick = () => sendAction('start');
+        document.getElementById('btn-stop').onclick = () => sendAction('stop');
+        document.getElementById('btn-clear-rules').onclick = clearRules;
+        document.getElementById('btn-add-rule').onclick = addRule;
+        document.getElementById('btn-import-rules').onclick = importRules;
+        document.getElementById('btn-test-ip').onclick = testIP;
+        document.getElementById('btn-save-dns').onclick = saveDNS;
+
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.onclick = () => setMode(btn.dataset.mode);
+        });
+
+        // 初始化
+        checkStatus();
+        loadNodes();
+        loadRules();
+        setInterval(checkStatus, 5000);
+    </script>
+</body>
+</html>

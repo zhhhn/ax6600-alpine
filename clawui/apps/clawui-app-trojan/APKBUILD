@@ -1,0 +1,18 @@
+# ClawUI App: Trojan - APKBUILD
+pkgname=clawui-app-trojan
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management for Trojan proxy"
+arch="noarch"
+license="MIT"
+depends="clawui trojan"
+source=""
+
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-trojan"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-trojan/"
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-trojan/api"
+    cp "$srcdir"/api/handler.sh "$pkgdir/usr/share/clawui/apps/clawui-app-trojan/api/"
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-trojan/api/handler.sh"
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-trojan/"
+}

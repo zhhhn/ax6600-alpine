@@ -1,0 +1,11 @@
+{
+  "id": "clawui-app-clash",
+  "name": "Clash",
+  "version": "1.0.0",
+  "description": "Clash 多节点规则代理",
+  "icon": "shield-network",
+  "category": "proxy",
+  "author": "ClawUI",
+  "permissions": ["network", "process"],
+  "dependencies": ["clash"]
+}

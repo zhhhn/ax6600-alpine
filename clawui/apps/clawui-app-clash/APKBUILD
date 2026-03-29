@@ -1,0 +1,18 @@
+# ClawUI App: Clash - APKBUILD
+pkgname=clawui-app-clash
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management for Clash proxy"
+arch="noarch"
+license="MIT"
+depends="clawui clash"
+source=""
+
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-clash"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-clash/"
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-clash/api"
+    cp "$srcdir"/api/handler.sh "$pkgdir/usr/share/clawui/apps/clawui-app-clash/api/"
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-clash/api/handler.sh"
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-clash/"
+}

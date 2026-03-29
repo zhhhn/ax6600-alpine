@@ -1,0 +1,18 @@
+# ClawUI App: Xray - APKBUILD
+pkgname=clawui-app-xray
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="ClawUI web management for Xray proxy"
+arch="noarch"
+license="MIT"
+depends="clawui xray"
+source=""
+
+package() {
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-xray"
+    cp -r "$srcdir"/www/* "$pkgdir/usr/share/clawui/apps/clawui-app-xray/"
+    mkdir -p "$pkgdir/usr/share/clawui/apps/clawui-app-xray/api"
+    cp "$srcdir"/api/handler.sh "$pkgdir/usr/share/clawui/apps/clawui-app-xray/api/"
+    chmod +x "$pkgdir/usr/share/clawui/apps/clawui-app-xray/api/handler.sh"
+    cp "$srcdir"/manifest.json "$pkgdir/usr/share/clawui/apps/clawui-app-xray/"
+}
